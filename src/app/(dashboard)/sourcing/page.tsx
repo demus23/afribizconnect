@@ -19,10 +19,10 @@ const RFQS = [
 ]
 
 const STATS = [
-  { label:'Active RFQs',     value:'8',   color:'#1e40af', bg:'#eff6ff' },
-  { label:'Total responses', value:'34',  color:'#059669', bg:'#f0fdf4' },
-  { label:'Awarded',         value:'3',   color:'#7c3aed', bg:'#f5f3ff' },
-  { label:'Avg response time', value:'6h', color:'#d97706', bg:'#fffbeb' },
+  { label: 'Active RFQs',      value: '8',  color: '#1e40af', bg: '#eff6ff' },
+  { label: 'Total responses',  value: '34', color: '#059669', bg: '#f0fdf4' },
+  { label: 'Awarded',          value: '3',  color: '#7c3aed', bg: '#f5f3ff' },
+  { label: 'Avg response time',value: '6h', color: '#d97706', bg: '#fffbeb' },
 ]
 
 export default function SourcingPage() {
