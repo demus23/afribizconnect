@@ -32,15 +32,17 @@ export async function register(formData: FormData) {
   const password = formData.get('password') as string
   const name     = formData.get('name') as string
 
+  console.log('Register attempt:', { email, name, hasPassword: !!password })
+
   if (!email || !password || !name) {
-    return { error: 'All fields are required.' }
+    return { error: `Missing fields: ${!name?'name ':''} ${!email?'email ':''} ${!password?'password':''}`.trim() }
   }
 
-  if (password.length < 8) {
-    return { error: 'Password must be at least 8 characters.' }
+  if (password.length < 6) {
+    return { error: 'Password must be at least 6 characters.' }
   }
 
-  const { error } = await supabase.auth.signUp({
+  const { data, error } = await supabase.auth.signUp({
     email,
     password,
     options: {
@@ -49,10 +51,23 @@ export async function register(formData: FormData) {
     },
   })
 
+  console.log('Supabase signUp result:', { userId: data?.user?.id, error: error?.message })
+
   if (error) {
     return { error: error.message }
   }
 
+  if (!data.user) {
+    return { error: 'Registration failed. Please try again.' }
+  }
+
+  // If session exists, email confirmation is off — go straight to dashboard
+  if (data.session) {
+    revalidatePath('/', 'layout')
+    redirect('/dashboard')
+  }
+
+  // Email confirmation required
   redirect('/verify?email=' + encodeURIComponent(email))
 }
 

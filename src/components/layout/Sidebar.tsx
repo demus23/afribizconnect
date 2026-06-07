@@ -18,6 +18,8 @@ const NAV = [
   { href: '/messages',    label: 'Messages',     icon: MessageSquare,  badge: '3' },
   { href: '/network',     label: 'Network',      icon: Users,          badge: null },
   { href: '/settings',    label: 'Settings',     icon: Settings,       badge: null },
+  { href: '/market',    label: 'Market Data', icon: BarChart3,  badge: 'Live' },
+  { href: '/assistant', label: 'AI Assistant', icon: Bot,        badge: 'New' },
 ]
 
 export function Sidebar() {
