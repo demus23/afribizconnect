@@ -4,7 +4,7 @@ import { usePathname } from 'next/navigation'
 import {
   LayoutDashboard, ShoppingBag, TrendingUp, Globe2, Truck,
   Ship, MessageSquare, Users, Settings, Globe, ChevronRight,
-  Zap, BadgeCheck
+  Zap, BadgeCheck,BarChart3, Bot
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
