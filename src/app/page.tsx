@@ -196,7 +196,7 @@ export default function HomePage() {
 
         {/* STATS */}
         <div className="border-t border-b" style={{ borderColor: '#e8edf3', background: 'white' }}>
-          <div className="max-w-7xl mx-auto px-5 sm:px-8 py-5 grid grid-cols-2 md:grid-cols-4 divide-x" style={{ divideColor: '#f1f5f9' }}>
+         <div className="max-w-7xl mx-auto px-5 sm:px-8 py-5 grid grid-cols-2 md:grid-cols-4 divide-x divide-slate-100">
             {STATS.map(s => (
               <div key={s.label} className="flex flex-col items-center justify-center py-4 px-4">
                 <span className="text-3xl font-black tracking-tighter mb-1" style={{ color: s.color }}>{s.val}</span>
