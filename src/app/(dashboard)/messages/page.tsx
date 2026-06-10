@@ -1,126 +1,254 @@
 'use client'
-import { useState } from 'react'
-import { Search, Send, MoreVertical, Phone, Video, Paperclip, Smile, ArrowLeft, BadgeCheck, Circle } from 'lucide-react'
+import { useState, useEffect, useRef } from 'react'
+import { Send, Search, Loader2, MessageSquare, Users, ArrowLeft } from 'lucide-react'
+import { createClient } from '@/lib/supabase/client'
 
-const CONVERSATIONS = [
-  { id:1, name:'Gulf Electronics Trading', country:'UAE', last:'Thanks for your interest. We can offer...', time:'2m', unread:3, online:true, avatar:'GE', color:'#1e40af' },
-  { id:2, name:'Al Madina FMCG Group', country:'UAE', last:'Invoice attached. Payment via TT preferred.', time:'1h', unread:0, online:true, avatar:'AM', color:'#059669' },
-  { id:3, name:'Shenzhen Mega Exports', country:'China', last:'MOQ for this product is 500 units minimum.', time:'3h', unread:1, online:false, avatar:'SM', color:'#7c3aed' },
-  { id:4, name:'Istanbul Textile Hub', country:'Turkey', last:'We have the fabric in stock. Lead time 18 days.', time:'1d', unread:0, online:false, avatar:'IT', color:'#d97706' },
-  { id:5, name:'AfriBizConnect Support', country:'Platform', last:'Your verification documents have been approved!', time:'2d', unread:0, online:true, avatar:'AB', color:'#0f172a' },
-]
+const FLAG: Record<string,string> = { AE:'🇦🇪', CN:'🇨🇳', NG:'🇳🇬', KE:'🇰🇪', GH:'🇬🇭', ZA:'🇿🇦', IN:'🇮🇳', TR:'🇹🇷', DE:'🇩🇪', DK:'🇩🇰' }
 
-const MESSAGES = [
-  { id:1, from:'them', text:'Hello! Thank you for your inquiry about LED TVs. We have 55" 4K UHD units in stock at Dubai warehouse.', time:'10:12 AM' },
-  { id:2, from:'them', text:'Our MOQ is 500 units. For 1,000 units, we can offer $82 per unit CIF Lagos.', time:'10:13 AM' },
-  { id:3, from:'me', text:'That sounds competitive. Can you share your product specifications and certifications?', time:'10:25 AM' },
-  { id:4, from:'them', text:'Absolutely! Attached you will find our full spec sheet. We are CE, FCC, and ISO 9001 certified.', time:'10:28 AM' },
-  { id:5, from:'me', text:'Great. What are your payment terms? We prefer LC at sight.', time:'10:35 AM' },
-  { id:6, from:'them', text:'We accept LC at sight, TT 30% advance, and for trusted partners we can do Net 30. Which works best for you?', time:'10:37 AM' },
-  { id:7, from:'me', text:'LC at sight works for us. Can you provide a pro forma invoice for 800 units to start?', time:'11:02 AM' },
-]
+function Avatar({ name, size = 9 }: { name: string; size?: number }) {
+  const initials = name?.split(' ').map((n:string) => n[0]).join('').toUpperCase().slice(0,2) || '??'
+  const colors = ['#1e40af','#059669','#7c3aed','#d97706','#dc2626','#0891b2']
+  const color  = colors[initials.charCodeAt(0) % colors.length]
+  return (
+    <div className={`h-${size} w-${size} rounded-xl flex items-center justify-center text-white text-xs font-black shrink-0`}
+      style={{ backgroundColor: color, minWidth: size*4, minHeight: size*4 }}>
+      {initials}
+    </div>
+  )
+}
 
 export default function MessagesPage() {
-  const [active, setActive] = useState(CONVERSATIONS[0])
-  const [msg, setMsg] = useState('')
+  const [conversations, setConversations] = useState<any[]>([])
+  const [messages, setMessages]           = useState<any[]>([])
+  const [activeConv, setActiveConv]       = useState<any>(null)
+  const [input, setInput]                 = useState('')
+  const [loading, setLoading]             = useState(true)
+  const [sending, setSending]             = useState(false)
+  const [myId, setMyId]                   = useState<string>('')
+  const [myName, setMyName]               = useState<string>('')
+  const [search, setSearch]               = useState('')
+  const bottomRef = useRef<HTMLDivElement>(null)
+  const supabase  = createClient()
+
+  useEffect(() => {
+    loadConversations()
+    // Get current user
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (user) setMyName(user.user_metadata?.full_name || user.email?.split('@')[0] || 'Me')
+    })
+  }, [])
+
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [messages])
+
+  // Supabase Realtime — listen for new messages
+  useEffect(() => {
+    if (!activeConv || !myId) return
+    const channel = supabase.channel(`messages-${activeConv.user.id}-${myId}`)
+      .on('postgres_changes', {
+        event: 'INSERT', schema: 'public', table: 'Message',
+        filter: `OR(and(senderId.eq.${myId},receiverId.eq.${activeConv.user.id}),and(senderId.eq.${activeConv.user.id},receiverId.eq.${myId}))`
+      }, () => { loadMessages(activeConv.user.id) })
+      .subscribe()
+    return () => { supabase.removeChannel(channel) }
+  }, [activeConv, myId])
+
+  async function loadConversations() {
+    setLoading(true)
+    try {
+      const res  = await fetch('/api/messages')
+      const data = await res.json()
+      setConversations(data.conversations || [])
+      setMyId(data.userId || '')
+    } catch { setConversations([]) }
+    finally  { setLoading(false) }
+  }
+
+  async function loadMessages(userId: string) {
+    try {
+      const res  = await fetch(`/api/messages?with=${userId}`)
+      const data = await res.json()
+      setMessages(data.messages || [])
+    } catch { setMessages([]) }
+  }
+
+  async function openConversation(conv: any) {
+    setActiveConv(conv)
+    await loadMessages(conv.user.id)
+  }
+
+  async function sendMessage() {
+    if (!input.trim() || !activeConv || sending) return
+    setSending(true)
+    const text = input.trim()
+    setInput('')
+
+    // Optimistic update
+    setMessages(prev => [...prev, {
+      id: 'temp-' + Date.now(),
+      senderId: myId,
+      content: text,
+      createdAt: new Date().toISOString(),
+      sender: { name: myName }
+    }])
+
+    try {
+      await fetch('/api/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ receiverId: activeConv.user.id, content: text })
+      })
+      loadConversations()
+    } catch { console.error('Send failed') }
+    finally { setSending(false) }
+  }
+
+  const filteredConvs = conversations.filter(c =>
+    c.user?.name?.toLowerCase().includes(search.toLowerCase()) ||
+    c.user?.businesses?.[0]?.name?.toLowerCase().includes(search.toLowerCase())
+  )
 
   return (
-    <div className="max-w-[1400px] mx-auto">
-      <div className="rounded-2xl bg-white border overflow-hidden flex" style={{ borderColor:'#e8edf3', boxShadow:'0 1px 4px rgba(0,0,0,0.04)', height:'calc(100vh - 140px)' }}>
+    <div className="flex h-[calc(100vh-120px)] rounded-2xl overflow-hidden border bg-white" style={{ borderColor:'#e8edf3', boxShadow:'0 4px 24px rgba(0,0,0,0.06)' }}>
 
-        {/* Sidebar */}
-        <div className="w-80 shrink-0 border-r flex flex-col" style={{ borderColor:'#f1f5f9' }}>
-          <div className="p-4 border-b" style={{ borderColor:'#f1f5f9' }}>
-            <h2 className="text-sm font-black mb-3" style={{ color:'#0f172a' }}>Messages</h2>
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5" style={{ color:'#94a3b8' }} />
-              <input type="text" placeholder="Search conversations..." className="w-full pl-9 pr-4 py-2 text-xs rounded-xl border focus:outline-none" style={{ borderColor:'#e2e8f0', background:'#f8fafc' }} />
-            </div>
+      {/* Sidebar — conversation list */}
+      <div className={`${activeConv ? 'hidden md:flex' : 'flex'} flex-col w-full md:w-80 lg:w-96 border-r shrink-0`} style={{ borderColor:'#f1f5f9' }}>
+        {/* Search */}
+        <div className="px-4 py-4 border-b" style={{ borderColor:'#f1f5f9' }}>
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-sm font-black" style={{ color:'#0f172a' }}>Messages</h2>
+            {conversations.length > 0 && (
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ background:'#eff6ff', color:'#1e40af' }}>{conversations.length} chats</span>
+            )}
           </div>
-          <div className="flex-1 overflow-y-auto">
-            {CONVERSATIONS.map(c=>(
-              <div key={c.id} onClick={()=>setActive(c)}
-                className="flex items-center gap-3 px-4 py-3.5 cursor-pointer transition-all hover:bg-slate-50 border-b"
-                style={{ borderColor:'#f8fafc', background: active.id===c.id?'#eff6ff':undefined }}>
-                <div className="relative shrink-0">
-                  <div className="h-10 w-10 rounded-2xl flex items-center justify-center text-white text-xs font-black" style={{ backgroundColor:c.color }}>{c.avatar}</div>
-                  {c.online && <div className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full bg-emerald-400 border-2 border-white" />}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between mb-0.5">
-                    <span className="text-xs font-black truncate" style={{ color:'#0f172a' }}>{c.name}</span>
-                    <span className="text-[10px] shrink-0 ml-1" style={{ color:'#94a3b8' }}>{c.time}</span>
-                  </div>
-                  <div className="text-[11px] truncate" style={{ color:'#94a3b8' }}>{c.last}</div>
-                </div>
-                {c.unread>0 && (
-                  <div className="h-5 w-5 rounded-full flex items-center justify-center text-white text-[10px] font-black shrink-0" style={{ background:'#1e40af' }}>{c.unread}</div>
-                )}
-              </div>
-            ))}
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5" style={{ color:'#94a3b8' }} />
+            <input type="text" placeholder="Search conversations..." value={search} onChange={e => setSearch(e.target.value)}
+              className="w-full pl-9 pr-4 py-2.5 text-sm rounded-xl border focus:outline-none" style={{ borderColor:'#e2e8f0', backgroundColor:'#f8fafc' }} />
           </div>
         </div>
 
-        {/* Chat area */}
+        {/* List */}
+        <div className="flex-1 overflow-y-auto">
+          {loading ? (
+            <div className="flex items-center justify-center py-12"><Loader2 className="h-5 w-5 animate-spin" style={{ color:'#1e40af' }} /></div>
+          ) : filteredConvs.length === 0 ? (
+            <div className="text-center py-12 px-6">
+              <MessageSquare className="h-10 w-10 mx-auto mb-3" style={{ color:'#e2e8f0' }} />
+              <p className="text-sm font-semibold mb-1" style={{ color:'#0f172a' }}>No conversations yet</p>
+              <p className="text-xs" style={{ color:'#94a3b8' }}>Connect with suppliers and investors from the Marketplace to start messaging.</p>
+            </div>
+          ) : (
+            filteredConvs.map(conv => {
+              const biz     = conv.user?.businesses?.[0]
+              const isActive = activeConv?.user?.id === conv.user?.id
+              return (
+                <button key={conv.user.id} onClick={() => openConversation(conv)}
+                  className="w-full flex items-center gap-3 px-4 py-3.5 text-left transition-colors hover:bg-slate-50 border-b"
+                  style={{ borderColor:'#f8fafc', backgroundColor: isActive ? '#eff6ff' : 'transparent' }}>
+                  <Avatar name={conv.user?.name || 'User'} size={10} />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between mb-0.5">
+                      <span className="text-xs font-black truncate" style={{ color:'#0f172a' }}>{biz?.name || conv.user?.name}</span>
+                      <span className="text-[10px] shrink-0 ml-2" style={{ color:'#94a3b8' }}>{conv.lastTime ? new Date(conv.lastTime).toLocaleDateString() : ''}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <p className="text-[11px] truncate flex-1" style={{ color:'#64748b' }}>{conv.lastMessage || 'Start a conversation'}</p>
+                      {conv.unread && <span className="h-2 w-2 rounded-full bg-blue-600 shrink-0 ml-2" />}
+                    </div>
+                    {biz && (
+                      <div className="flex items-center gap-1 mt-0.5">
+                        <span className="text-[10px]">{FLAG[biz.country] || '🌍'}</span>
+                        <span className="text-[10px]" style={{ color:'#94a3b8' }}>{biz.country}</span>
+                        {biz.trustScore > 0 && <span className="text-[10px] font-bold" style={{ color:'#059669' }}>· {biz.trustScore}</span>}
+                      </div>
+                    )}
+                  </div>
+                </button>
+              )
+            })
+          )}
+        </div>
+      </div>
+
+      {/* Main chat area */}
+      {activeConv ? (
         <div className="flex-1 flex flex-col min-w-0">
           {/* Chat header */}
-          <div className="flex items-center justify-between px-5 py-3.5 border-b" style={{ borderColor:'#f1f5f9' }}>
-            <div className="flex items-center gap-3">
-              <div className="relative">
-                <div className="h-9 w-9 rounded-xl flex items-center justify-center text-white text-xs font-black" style={{ backgroundColor:active.color }}>{active.avatar}</div>
-                {active.online && <div className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-emerald-400 border-2 border-white" />}
+          <div className="flex items-center gap-3 px-5 py-4 border-b shrink-0" style={{ borderColor:'#f1f5f9' }}>
+            <button className="md:hidden p-1.5 rounded-lg hover:bg-slate-100 mr-1" onClick={() => setActiveConv(null)}>
+              <ArrowLeft className="h-4 w-4" style={{ color:'#64748b' }} />
+            </button>
+            <Avatar name={activeConv.user?.name || 'User'} size={9} />
+            <div className="flex-1 min-w-0">
+              <div className="text-sm font-black truncate" style={{ color:'#0f172a' }}>
+                {activeConv.user?.businesses?.[0]?.name || activeConv.user?.name}
               </div>
-              <div>
-                <div className="flex items-center gap-1.5">
-                  <span className="text-sm font-black" style={{ color:'#0f172a' }}>{active.name}</span>
-                  <BadgeCheck className="h-3.5 w-3.5 text-emerald-500" />
-                </div>
-                <div className="text-[11px]" style={{ color:'#94a3b8' }}>{active.online?'🟢 Online':'⚫ Offline'} · {active.country}</div>
+              <div className="flex items-center gap-1.5 text-[11px]" style={{ color:'#94a3b8' }}>
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+                Active on platform
               </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <button className="p-2 rounded-xl hover:bg-slate-50 transition-colors"><Phone className="h-4 w-4" style={{ color:'#64748b' }} /></button>
-              <button className="p-2 rounded-xl hover:bg-slate-50 transition-colors"><Video className="h-4 w-4" style={{ color:'#64748b' }} /></button>
-              <button className="p-2 rounded-xl hover:bg-slate-50 transition-colors"><MoreVertical className="h-4 w-4" style={{ color:'#64748b' }} /></button>
             </div>
           </div>
 
           {/* Messages */}
-          <div className="flex-1 overflow-y-auto p-5 space-y-4" style={{ background:'#fafbfc' }}>
-            {MESSAGES.map(m=>(
-              <div key={m.id} className={`flex ${m.from==='me'?'justify-end':''}`}>
-                {m.from!=='me' && (
-                  <div className="h-7 w-7 rounded-xl flex items-center justify-center text-white text-[10px] font-black shrink-0 mr-2 mt-1" style={{ backgroundColor:active.color }}>{active.avatar}</div>
-                )}
-                <div className="max-w-[70%]">
-                  <div className="px-4 py-2.5 rounded-2xl text-xs leading-relaxed"
-                    style={m.from==='me'
-                      ? { background:'linear-gradient(135deg,#1e40af,#2563eb)', color:'white', borderBottomRightRadius:4 }
-                      : { background:'white', color:'#374151', border:'1px solid #f1f5f9', borderBottomLeftRadius:4, boxShadow:'0 1px 3px rgba(0,0,0,0.05)' }
-                    }>
-                    {m.text}
-                  </div>
-                  <div className="text-[10px] mt-1 px-1" style={{ color:'#94a3b8', textAlign:m.from==='me'?'right':'left' }}>{m.time}</div>
-                </div>
+          <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4">
+            {messages.length === 0 ? (
+              <div className="text-center py-12">
+                <MessageSquare className="h-10 w-10 mx-auto mb-3" style={{ color:'#e2e8f0' }} />
+                <p className="text-sm font-semibold mb-1" style={{ color:'#0f172a' }}>Start the conversation</p>
+                <p className="text-xs" style={{ color:'#94a3b8' }}>Send a message to connect with this business.</p>
               </div>
-            ))}
+            ) : messages.map((msg, i) => {
+              const isMe = msg.senderId === myId
+              return (
+                <div key={msg.id || i} className={`flex items-end gap-2.5 ${isMe ? 'flex-row-reverse' : ''}`}>
+                  {!isMe && <Avatar name={msg.sender?.name || 'User'} size={7} />}
+                  <div className={`max-w-[70%] ${isMe ? 'items-end' : 'items-start'} flex flex-col gap-1`}>
+                    <div className={`px-4 py-2.5 rounded-2xl text-sm leading-relaxed ${isMe ? 'rounded-tr-md' : 'rounded-tl-md'}`}
+                      style={isMe
+                        ? { background:'linear-gradient(135deg,#1e40af,#2563eb)', color:'white' }
+                        : { backgroundColor:'#f8fafc', color:'#374151', border:'1px solid #f1f5f9' }
+                      }>
+                      {msg.content}
+                    </div>
+                    <span className="text-[10px]" style={{ color:'#94a3b8' }}>
+                      {new Date(msg.createdAt).toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' })}
+                    </span>
+                  </div>
+                </div>
+              )
+            })}
+            <div ref={bottomRef} />
           </div>
 
           {/* Input */}
-          <div className="p-4 border-t" style={{ borderColor:'#f1f5f9' }}>
-            <div className="flex items-center gap-2 rounded-2xl border px-4 py-2.5" style={{ borderColor:'#e2e8f0', background:'white' }}>
-              <button className="p-1 hover:text-blue-600 transition-colors"><Paperclip className="h-4 w-4" style={{ color:'#94a3b8' }} /></button>
-              <input type="text" value={msg} onChange={e=>setMsg(e.target.value)} placeholder="Type a message..."
-                className="flex-1 text-sm focus:outline-none bg-transparent" style={{ color:'#0f172a' }} />
-              <button className="p-1 hover:text-blue-600 transition-colors"><Smile className="h-4 w-4" style={{ color:'#94a3b8' }} /></button>
-              <button className="h-8 w-8 rounded-xl flex items-center justify-center text-white transition-all hover:opacity-90"
+          <div className="shrink-0 border-t px-4 py-3" style={{ borderColor:'#f1f5f9' }}>
+            <div className="flex gap-3 items-end rounded-2xl border p-2" style={{ borderColor:'#e2e8f0' }}>
+              <textarea value={input} onChange={e => setInput(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage() } }}
+                placeholder="Type a message... (Enter to send)"
+                rows={1} className="flex-1 text-sm resize-none focus:outline-none bg-transparent py-1 px-2" style={{ color:'#0f172a', maxHeight:100 }} />
+              <button onClick={sendMessage} disabled={!input.trim() || sending}
+                className="h-9 w-9 rounded-xl flex items-center justify-center text-white transition-all hover:opacity-90 disabled:opacity-40 shrink-0"
                 style={{ background:'linear-gradient(135deg,#1e40af,#2563eb)' }}>
-                <Send className="h-3.5 w-3.5" />
+                {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
               </button>
             </div>
           </div>
         </div>
-      </div>
+      ) : (
+        <div className="hidden md:flex flex-1 items-center justify-center flex-col gap-4" style={{ background:'#fafbfc' }}>
+          <div className="h-16 w-16 rounded-2xl flex items-center justify-center" style={{ background:'linear-gradient(135deg,#eff6ff,#dbeafe)' }}>
+            <MessageSquare className="h-8 w-8" style={{ color:'#1e40af' }} />
+          </div>
+          <div className="text-center">
+            <p className="text-sm font-black mb-1" style={{ color:'#0f172a' }}>Select a conversation</p>
+            <p className="text-xs" style={{ color:'#94a3b8' }}>Choose a contact from the list to start messaging</p>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
