@@ -1,160 +1,323 @@
 'use client'
-import { useState } from 'react'
-import { Truck, Package, Clock, MapPin, ArrowRight, CheckCircle2, Globe2, BarChart3, Ship, Plane, AlertCircle } from 'lucide-react'
-import Link from 'next/link'
+import { useState, useEffect } from 'react'
+import { Truck, Package, Clock, MapPin, ArrowRight, Loader2, Plus, X, AlertCircle, CheckCircle2, Plane, Ship, Box } from 'lucide-react'
 
-const SHIPMENTS = [
-  { id:'TRK-0082', from:'Dubai, UAE', to:'Lagos, Nigeria', carrier:'Emirates SkyCargo', status:'In Transit', progress:65, eta:'Jun 8, 2025', weight:'2.4 MT', type:'Air Freight', flag1:'🇦🇪', flag2:'🇳🇬', color:'#1e40af' },
-  { id:'TRK-0079', from:'Shenzhen, China', to:'Accra, Ghana', carrier:'COSCO Shipping', status:'Customs Clearance', progress:80, eta:'Jun 3, 2025', weight:'18 MT', type:'Sea Freight', flag1:'🇨🇳', flag2:'🇬🇭', color:'#d97706' },
-  { id:'TRK-0075', from:'Istanbul, Turkey', to:'Nairobi, Kenya', carrier:'Turkish Cargo', status:'Delivered', progress:100, eta:'Delivered', weight:'5.2 MT', type:'Air Freight', flag1:'🇹🇷', flag2:'🇰🇪', color:'#059669' },
+const FREIGHT_TYPES = [
+  { id:'air',      label:'Air Freight',    icon:Plane,  time:'3-7 days',  desc:'Best for urgent, high-value cargo' },
+  { id:'sea_fcl',  label:'Sea FCL',        icon:Ship,   time:'18-35 days',desc:'Full container load, best rates for bulk' },
+  { id:'sea_lcl',  label:'Sea LCL',        icon:Box,    time:'21-40 days',desc:'Less than container, flexible volumes' },
 ]
 
-const PROGRESS_STEPS = ['Order Confirmed','Picked Up','In Transit','Customs','Delivered']
+const CARGO_TYPES = ['General Cargo','Electronics','Food & Perishables','Chemicals (Hazmat)','Machinery & Equipment','Textiles & Apparel','Auto Parts','Pharmaceuticals','Building Materials']
 
-const CARRIERS = [
-  { name:'Emirates Logistics', type:'Air', rate:'$4.2/kg', transit:'3–5 days', score:94, logo:'🇦🇪' },
-  { name:'COSCO Shipping', type:'Sea', rate:'$85/CBM', transit:'22–28 days', score:88, logo:'🇨🇳' },
-  { name:'DHL Express', type:'Air', rate:'$5.8/kg', transit:'2–4 days', score:96, logo:'🌐' },
-  { name:'MSC Mediterranean', type:'Sea', rate:'$72/CBM', transit:'18–24 days', score:91, logo:'🌊' },
-]
+const ORIGINS = ['Dubai, UAE','Shanghai, China','Istanbul, Turkey','Mumbai, India','Riyadh, Saudi Arabia','Rotterdam, Netherlands','Shenzhen, China','Guangzhou, China']
+
+const DESTINATIONS = ['Lagos, Nigeria','Nairobi, Kenya','Accra, Ghana','Addis Ababa, Ethiopia','Johannesburg, South Africa','Cairo, Egypt','Dar es Salaam, Tanzania','Casablanca, Morocco']
+
+const STATUS_CONFIG: Record<string, {color:string,bg:string,label:string}> = {
+  QUOTED:       { color:'#1e40af', bg:'#eff6ff',  label:'Quote received' },
+  ACCEPTED:     { color:'#059669', bg:'#f0fdf4',  label:'Accepted' },
+  IN_TRANSIT:   { color:'#d97706', bg:'#fffbeb',  label:'In transit' },
+  DELIVERED:    { color:'#059669', bg:'#f0fdf4',  label:'Delivered' },
+  CANCELLED:    { color:'#dc2626', bg:'#fef2f2',  label:'Cancelled' },
+}
+
+const CARRIER_FLAGS: Record<string,string> = {
+  'Emirates Cargo Solutions':'🇦🇪',
+  'DHL Express Africa':'🇩🇪',
+  'Maersk Africa':'🇩🇰',
+  'MSC Mediterranean Africa':'🇨🇭',
+  'COSCO Africa Shipping':'🇨🇳',
+}
 
 export default function LogisticsPage() {
-  const [mode, setMode] = useState<'air'|'sea'|'road'>('sea')
-  const [active, setActive] = useState(0)
+  const [quotes, setQuotes]       = useState<any[]>([])
+  const [shipments, setShipments] = useState<any[]>([])
+  const [loading, setLoading]     = useState(true)
+  const [showForm, setForm]       = useState(false)
+  const [requesting, setReq]      = useState(false)
+  const [error, setError]         = useState<string|null>(null)
+  const [success, setSuccess]     = useState<string|null>(null)
+  const [activeTab, setTab]       = useState<'quotes'|'shipments'>('quotes')
+
+  const [form, setForm2] = useState({
+    type: 'sea_fcl', origin: '', destination: '',
+    cargoType: '', weight: '', volume: '', notes: '',
+  })
+
+  useEffect(() => { load() }, [])
+
+  async function load() {
+    setLoading(true)
+    try {
+      const res  = await fetch('/api/shipments')
+      const data = await res.json()
+      setQuotes(data.quotes || [])
+      setShipments(data.shipments || [])
+    } catch {}
+    finally { setLoading(false) }
+  }
+
+  async function requestQuotes() {
+    if (!form.origin || !form.destination || !form.cargoType) {
+      setError('Origin, destination, and cargo type are required.'); return
+    }
+    setReq(true); setError(null)
+    try {
+      const res  = await fetch('/api/shipments', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(form) })
+      const data = await res.json()
+      if (data.error) { setError(data.error); return }
+      setSuccess(`${data.quotes?.length || 3} freight quotes received from verified carriers!`)
+      setForm(false)
+      load()
+      setTimeout(() => setSuccess(null), 5000)
+    } catch { setError('Failed to get quotes. Try again.') }
+    finally { setReq(false) }
+  }
 
   return (
-    <div className="space-y-6 max-w-[1400px] mx-auto">
+    <div className="space-y-6 max-w-[1200px] mx-auto">
+
+      {/* Header */}
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="text-2xl font-black tracking-tight" style={{ color:'#0f172a' }}>Logistics & Shipping</h1>
-          <p className="text-sm mt-1" style={{ color:'#64748b' }}>Track shipments, request quotes, and manage cross-border freight</p>
+          <h1 className="text-2xl font-black tracking-tight" style={{ color:'#0f172a' }}>Logistics Hub</h1>
+          <p className="text-sm mt-1" style={{ color:'#64748b' }}>Get freight quotes from verified carriers and track your shipments</p>
         </div>
-        <button className="flex items-center gap-2 text-sm font-black px-5 py-2.5 rounded-xl text-white hover:opacity-90 transition-all"
+        <button onClick={() => setForm(true)}
+          className="flex items-center gap-2 text-sm font-black px-5 py-2.5 rounded-xl text-white"
           style={{ background:'linear-gradient(135deg,#7c3aed,#6d28d9)', boxShadow:'0 4px 12px rgba(124,58,237,0.3)' }}>
-          <Truck className="h-4 w-4" /> Request Quote
+          <Plus className="h-4 w-4" /> Request freight quote
         </button>
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {[
-          { label:'Active Shipments', value:'3', icon:Truck,    color:'#1e40af', bg:'#eff6ff' },
-          { label:'In Customs',       value:'1', icon:AlertCircle,color:'#d97706', bg:'#fffbeb' },
-          { label:'Delivered (30d)',  value:'8', icon:CheckCircle2,color:'#059669',bg:'#f0fdf4' },
-          { label:'Avg Transit',     value:'14d',icon:Clock,    color:'#7c3aed', bg:'#f5f3ff' },
-        ].map(s=>(
-          <div key={s.label} className="rounded-2xl bg-white border p-5" style={{ borderColor:'#e8edf3', boxShadow:'0 1px 4px rgba(0,0,0,0.04)' }}>
-            <div className="flex items-center justify-between mb-3">
-              <div className="h-9 w-9 rounded-xl flex items-center justify-center" style={{ backgroundColor:s.bg }}>
-                <s.icon className="h-4.5 w-4.5" style={{ color:s.color }} />
-              </div>
+          { label:'Quote requests', val:String(quotes.length),    color:'#7c3aed', bg:'#f5f3ff', icon:Package },
+          { label:'Active shipments',val:String(shipments.filter(s=>s.status==='IN_TRANSIT').length), color:'#d97706', bg:'#fffbeb', icon:Truck },
+          { label:'Delivered',      val:String(shipments.filter(s=>s.status==='DELIVERED').length), color:'#059669', bg:'#f0fdf4', icon:CheckCircle2 },
+          { label:'Carriers available',val:'5',               color:'#1e40af', bg:'#eff6ff', icon:MapPin },
+        ].map(s => (
+          <div key={s.label} className="rounded-2xl bg-white border p-4 flex items-center gap-3" style={{ borderColor:'#e8edf3', boxShadow:'0 1px 4px rgba(0,0,0,0.04)' }}>
+            <div className="h-9 w-9 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor:s.bg }}>
+              <s.icon className="h-4 w-4" style={{ color:s.color }} />
             </div>
-            <div className="text-2xl font-black" style={{ color:'#0f172a' }}>{s.value}</div>
-            <div className="text-xs font-medium mt-0.5" style={{ color:'#64748b' }}>{s.label}</div>
+            <div>
+              <div className="text-xl font-black" style={{ color:'#0f172a' }}>{s.val}</div>
+              <div className="text-xs" style={{ color:'#64748b' }}>{s.label}</div>
+            </div>
           </div>
         ))}
       </div>
 
-      <div className="grid xl:grid-cols-5 gap-5">
-        {/* Shipment tracking — 3 cols */}
-        <div className="xl:col-span-3 space-y-4">
-          <h2 className="text-sm font-black" style={{ color:'#0f172a' }}>Active Shipments</h2>
-          {SHIPMENTS.map((s,i)=>{
-            const stepIdx = s.progress===100?4:s.status==='Customs Clearance'?3:s.status==='In Transit'?2:1
-            return (
-              <div key={s.id} className="rounded-2xl bg-white border overflow-hidden" style={{ borderColor:'#e8edf3', boxShadow:'0 1px 4px rgba(0,0,0,0.04)' }}>
-                <div className="flex items-center justify-between px-5 py-4 border-b" style={{ borderColor:'#f1f5f9' }}>
-                  <div className="flex items-center gap-3">
-                    <div className="h-9 w-9 rounded-xl flex items-center justify-center" style={{ background: s.progress===100?'#f0fdf4':s.status.includes('Custom')?'#fffbeb':'#eff6ff' }}>
-                      {s.type==='Air Freight' ? <Plane className="h-4 w-4" style={{ color:s.color }} /> : <Ship className="h-4 w-4" style={{ color:s.color }} />}
-                    </div>
-                    <div>
-                      <div className="text-xs font-black" style={{ color:'#0f172a' }}>{s.id}</div>
-                      <div className="text-[11px]" style={{ color:'#94a3b8' }}>{s.carrier} · {s.type}</div>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-xs font-black px-2.5 py-1 rounded-full"
-                      style={{ background:s.progress===100?'#f0fdf4':s.status.includes('Custom')?'#fffbeb':'#eff6ff',
-                               color:s.progress===100?'#059669':s.status.includes('Custom')?'#d97706':'#1e40af' }}>
-                      {s.status}
-                    </div>
-                    <div className="text-[11px] mt-1" style={{ color:'#94a3b8' }}>ETA: {s.eta}</div>
-                  </div>
-                </div>
-                <div className="px-5 py-4">
-                  <div className="flex items-center gap-2 mb-4 text-xs" style={{ color:'#374151' }}>
-                    <span className="font-semibold">{s.flag1} {s.from}</span>
-                    <ArrowRight className="h-3.5 w-3.5 shrink-0" style={{ color:'#94a3b8' }} />
-                    <span className="font-semibold">{s.flag2} {s.to}</span>
-                    <span className="ml-auto" style={{ color:'#94a3b8' }}>{s.weight}</span>
-                  </div>
-                  {/* Progress bar */}
-                  <div className="relative mb-2">
-                    <div className="h-2 rounded-full overflow-hidden" style={{ backgroundColor:'#f1f5f9' }}>
-                      <div className="h-full rounded-full transition-all" style={{ width:`${s.progress}%`, backgroundColor:s.color }} />
-                    </div>
-                  </div>
-                  {/* Step labels */}
-                  <div className="flex justify-between">
-                    {PROGRESS_STEPS.map((step,j)=>(
-                      <span key={step} className="text-[9px] font-semibold" style={{ color: j<=stepIdx ? s.color : '#cbd5e1' }}>{step.split(' ')[0]}</span>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            )
-          })}
+      {/* Success */}
+      {success && (
+        <div className="flex items-center gap-2.5 p-4 rounded-2xl text-sm" style={{ background:'#f0fdf4', border:'1px solid #bbf7d0', color:'#059669' }}>
+          <CheckCircle2 className="h-4 w-4 shrink-0" />{success}
         </div>
+      )}
 
-        {/* Quote Request — 2 cols */}
-        <div className="xl:col-span-2 space-y-4">
-          <h2 className="text-sm font-black" style={{ color:'#0f172a' }}>Get Freight Quote</h2>
-          <div className="rounded-2xl bg-white border p-5" style={{ borderColor:'#e8edf3', boxShadow:'0 1px 4px rgba(0,0,0,0.04)' }}>
-            {/* Mode selector */}
-            <div className="flex gap-2 mb-5 p-1 rounded-xl" style={{ background:'#f8fafc' }}>
-              {[{key:'sea',label:'Sea',icon:Ship},{key:'air',label:'Air',icon:Plane},{key:'road',label:'Road',icon:Truck}].map(m=>(
-                <button key={m.key} onClick={()=>setMode(m.key as any)}
-                  className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-black transition-all"
-                  style={mode===m.key?{ background:'linear-gradient(135deg,#1e40af,#2563eb)', color:'white', boxShadow:'0 2px 8px rgba(30,64,175,0.25)' }:{ color:'#64748b' }}>
-                  <m.icon className="h-3.5 w-3.5" /> {m.label}
-                </button>
-              ))}
-            </div>
-            <div className="space-y-3">
-              {[{label:'Origin',placeholder:'Dubai, UAE'},{label:'Destination',placeholder:'Lagos, Nigeria'},{label:'Cargo Weight (KG)',placeholder:'e.g. 2,400'},{label:'CBM / Volume',placeholder:'e.g. 14.5 CBM'},{label:'Incoterms',placeholder:'FOB / CIF / EXW'}].map(f=>(
-                <div key={f.label}>
-                  <label className="block text-[10px] font-black uppercase tracking-wide mb-1" style={{ color:'#374151' }}>{f.label}</label>
-                  <input type="text" placeholder={f.placeholder} className="w-full px-3.5 py-2.5 text-sm rounded-xl border focus:outline-none" style={{ borderColor:'#e2e8f0', background:'#f8fafc' }} />
+      {/* Tabs */}
+      <div className="flex gap-1 p-1 rounded-xl w-fit" style={{ background:'#f1f5f9' }}>
+        {(['quotes','shipments'] as const).map(t => (
+          <button key={t} onClick={() => setTab(t)}
+            className="text-sm font-bold px-5 py-2 rounded-lg capitalize transition-all"
+            style={activeTab===t ? { background:'white', color:'#0f172a', boxShadow:'0 1px 4px rgba(0,0,0,0.08)' } : { color:'#64748b' }}>
+            {t} {t==='quotes' ? `(${quotes.length})` : `(${shipments.length})`}
+          </button>
+        ))}
+      </div>
+
+      {loading ? (
+        <div className="flex justify-center py-20"><Loader2 className="h-6 w-6 animate-spin" style={{ color:'#7c3aed' }} /></div>
+      ) : activeTab === 'quotes' ? (
+        quotes.length === 0 ? (
+          <div className="rounded-2xl bg-white border p-16 text-center" style={{ borderColor:'#e8edf3' }}>
+            <Truck className="h-14 w-14 mx-auto mb-4" style={{ color:'#e2e8f0' }} />
+            <h3 className="text-base font-black mb-2" style={{ color:'#0f172a' }}>No freight quotes yet</h3>
+            <p className="text-sm mb-6" style={{ color:'#64748b' }}>Request quotes from our 5 verified carrier partners including DHL, Maersk, and Emirates Cargo.</p>
+            <button onClick={() => setForm(true)} className="flex items-center gap-2 text-sm font-black px-6 py-3 rounded-xl text-white mx-auto" style={{ background:'linear-gradient(135deg,#7c3aed,#6d28d9)' }}>
+              <Plus className="h-4 w-4" /> Get first quote
+            </button>
+          </div>
+        ) : (
+          <div className="grid md:grid-cols-2 gap-4">
+            {quotes.map((q: any) => {
+              const sc = STATUS_CONFIG[q.status] || STATUS_CONFIG['QUOTED']
+              const flag = CARRIER_FLAGS[q.provider?.name] || '🌍'
+              return (
+                <div key={q.id} className="rounded-2xl bg-white border p-5" style={{ borderColor:'#e8edf3', boxShadow:'0 1px 4px rgba(0,0,0,0.04)' }}>
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="flex items-center gap-2.5">
+                      <div className="h-10 w-10 rounded-xl flex items-center justify-center text-lg" style={{ background:'#f5f3ff' }}>{flag}</div>
+                      <div>
+                        <div className="text-sm font-black" style={{ color:'#0f172a' }}>{q.provider?.name || 'Carrier'}</div>
+                        <div className="text-[11px]" style={{ color:'#94a3b8' }}>Trust: {q.provider?.trustScore || 'N/A'}/100</div>
+                      </div>
+                    </div>
+                    <span className="text-[10px] font-black px-2.5 py-1 rounded-full" style={{ background:sc.bg, color:sc.color }}>{sc.label}</span>
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-3 mb-4">
+                    <div className="text-center p-2.5 rounded-xl" style={{ background:'#f5f3ff' }}>
+                      <div className="text-base font-black" style={{ color:'#7c3aed' }}>${Number(q.price).toLocaleString()}</div>
+                      <div className="text-[10px]" style={{ color:'#94a3b8' }}>Total price</div>
+                    </div>
+                    <div className="text-center p-2.5 rounded-xl" style={{ background:'#fffbeb' }}>
+                      <div className="text-base font-black" style={{ color:'#d97706' }}>{q.transitDays}d</div>
+                      <div className="text-[10px]" style={{ color:'#94a3b8' }}>Transit time</div>
+                    </div>
+                    <div className="text-center p-2.5 rounded-xl" style={{ background:'#fef2f2' }}>
+                      <div className="text-xs font-black" style={{ color:'#dc2626' }}>
+                        {q.validUntil ? new Date(q.validUntil).toLocaleDateString() : 'N/A'}
+                      </div>
+                      <div className="text-[10px]" style={{ color:'#94a3b8' }}>Valid until</div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2 text-xs mb-4" style={{ color:'#64748b' }}>
+                    <MapPin className="h-3 w-3 shrink-0" />
+                    <span className="truncate">{q.origin} → {q.destination}</span>
+                  </div>
+
+                  {q.status === 'QUOTED' && (
+                    <button className="w-full py-2.5 rounded-xl text-sm font-black text-white" style={{ background:'linear-gradient(135deg,#7c3aed,#6d28d9)' }}>
+                      Accept this quote
+                    </button>
+                  )}
                 </div>
-              ))}
-              <button className="w-full py-3 rounded-xl text-sm font-black text-white hover:opacity-90 transition-all mt-2"
-                style={{ background:'linear-gradient(135deg,#7c3aed,#6d28d9)', boxShadow:'0 4px 12px rgba(124,58,237,0.3)' }}>
-                Get Instant Quotes →
+              )
+            })}
+          </div>
+        )
+      ) : (
+        shipments.length === 0 ? (
+          <div className="rounded-2xl bg-white border p-16 text-center" style={{ borderColor:'#e8edf3' }}>
+            <Package className="h-14 w-14 mx-auto mb-4" style={{ color:'#e2e8f0' }} />
+            <p className="text-sm font-black mb-1" style={{ color:'#0f172a' }}>No shipments yet</p>
+            <p className="text-xs" style={{ color:'#94a3b8' }}>Accept a freight quote to create your first shipment.</p>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {shipments.map((s: any) => {
+              const sc = STATUS_CONFIG[s.status] || STATUS_CONFIG['IN_TRANSIT']
+              return (
+                <div key={s.id} className="rounded-2xl bg-white border p-5" style={{ borderColor:'#e8edf3', boxShadow:'0 1px 4px rgba(0,0,0,0.04)' }}>
+                  <div className="flex items-center justify-between flex-wrap gap-3">
+                    <div>
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-sm font-black" style={{ color:'#0f172a' }}>{s.trackingNumber || 'TRK-' + s.id.slice(0,8).toUpperCase()}</span>
+                        <span className="text-[10px] font-black px-2 py-0.5 rounded-full" style={{ background:sc.bg, color:sc.color }}>{sc.label}</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-xs" style={{ color:'#94a3b8' }}>
+                        <MapPin className="h-3 w-3" />{s.origin || 'Origin'} → {s.destination || 'Destination'}
+                        <span>·</span><Clock className="h-3 w-3" />{new Date(s.createdAt).toLocaleDateString()}
+                      </div>
+                    </div>
+                    <button className="text-xs font-bold px-4 py-2 rounded-xl border" style={{ borderColor:'#e2e8f0', color:'#374151' }}>
+                      Track shipment
+                    </button>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        )
+      )}
+
+      {/* QUOTE REQUEST MODAL */}
+      {showForm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor:'rgba(0,0,0,0.5)', backdropFilter:'blur(4px)' }}>
+          <div className="w-full max-w-lg rounded-3xl bg-white shadow-2xl overflow-hidden" style={{ maxHeight:'90vh', overflowY:'auto' }}>
+            <div className="flex items-center justify-between px-6 py-5 border-b" style={{ borderColor:'#f1f5f9' }}>
+              <h2 className="text-lg font-black" style={{ color:'#0f172a' }}>Request Freight Quote</h2>
+              <button onClick={() => { setForm(false); setError(null) }} className="p-2 rounded-xl hover:bg-slate-100">
+                <X className="h-5 w-5" style={{ color:'#64748b' }} />
               </button>
             </div>
-          </div>
-
-          {/* Carriers */}
-          <h2 className="text-sm font-black" style={{ color:'#0f172a' }}>Top Carriers</h2>
-          <div className="space-y-2">
-            {CARRIERS.map(c=>(
-              <div key={c.name} className="rounded-xl bg-white border p-3.5 flex items-center gap-3 hover:shadow-sm transition-all cursor-pointer"
-                style={{ borderColor:'#e8edf3' }}>
-                <div className="text-xl shrink-0">{c.logo}</div>
-                <div className="flex-1 min-w-0">
-                  <div className="text-xs font-black" style={{ color:'#0f172a' }}>{c.name}</div>
-                  <div className="text-[11px]" style={{ color:'#94a3b8' }}>{c.type} · {c.transit}</div>
+            <div className="p-6 space-y-5">
+              {error && (
+                <div className="flex items-center gap-2 p-3.5 rounded-xl text-sm" style={{ background:'#fef2f2', border:'1px solid #fecaca', color:'#dc2626' }}>
+                  <AlertCircle className="h-4 w-4 shrink-0" />{error}
                 </div>
-                <div className="text-right shrink-0">
-                  <div className="text-xs font-black" style={{ color:'#1e40af' }}>{c.rate}</div>
-                  <div className="text-[10px] font-bold" style={{ color:'#059669' }}>★ {c.score}</div>
+              )}
+
+              {/* Freight type */}
+              <div>
+                <label className="block text-xs font-black uppercase tracking-wide mb-2" style={{ color:'#374151' }}>Shipping method</label>
+                <div className="grid grid-cols-3 gap-2">
+                  {FREIGHT_TYPES.map(ft => (
+                    <button key={ft.id} type="button" onClick={() => setForm2(p => ({...p, type:ft.id}))}
+                      className="flex flex-col items-center gap-1.5 p-3 rounded-xl border text-center transition-all"
+                      style={form.type===ft.id ? { borderColor:'#7c3aed', background:'#f5f3ff' } : { borderColor:'#e2e8f0', background:'white' }}>
+                      <ft.icon className="h-5 w-5" style={{ color:form.type===ft.id ? '#7c3aed' : '#94a3b8' }} />
+                      <div className="text-[10px] font-black" style={{ color:form.type===ft.id ? '#7c3aed' : '#374151' }}>{ft.label}</div>
+                      <div className="text-[9px]" style={{ color:'#94a3b8' }}>{ft.time}</div>
+                    </button>
+                  ))}
                 </div>
               </div>
-            ))}
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-black uppercase tracking-wide mb-1.5" style={{ color:'#374151' }}>Origin *</label>
+                  <select value={form.origin} onChange={e => setForm2(p => ({...p, origin:e.target.value}))}
+                    className="w-full px-4 py-3 text-sm rounded-xl border focus:outline-none appearance-none" style={{ borderColor:'#e2e8f0', backgroundColor:'#f8fafc', color:'#374151' }}>
+                    <option value="">Select origin</option>
+                    {ORIGINS.map(o => <option key={o}>{o}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-black uppercase tracking-wide mb-1.5" style={{ color:'#374151' }}>Destination *</label>
+                  <select value={form.destination} onChange={e => setForm2(p => ({...p, destination:e.target.value}))}
+                    className="w-full px-4 py-3 text-sm rounded-xl border focus:outline-none appearance-none" style={{ borderColor:'#e2e8f0', backgroundColor:'#f8fafc', color:'#374151' }}>
+                    <option value="">Select destination</option>
+                    {DESTINATIONS.map(d => <option key={d}>{d}</option>)}
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-black uppercase tracking-wide mb-1.5" style={{ color:'#374151' }}>Cargo type *</label>
+                <select value={form.cargoType} onChange={e => setForm2(p => ({...p, cargoType:e.target.value}))}
+                  className="w-full px-4 py-3 text-sm rounded-xl border focus:outline-none appearance-none" style={{ borderColor:'#e2e8f0', backgroundColor:'#f8fafc', color:'#374151' }}>
+                  <option value="">Select cargo type</option>
+                  {CARGO_TYPES.map(c => <option key={c}>{c}</option>)}
+                </select>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-black uppercase tracking-wide mb-1.5" style={{ color:'#374151' }}>Weight (kg)</label>
+                  <input type="number" placeholder="1000" value={form.weight} onChange={e => setForm2(p => ({...p, weight:e.target.value}))}
+                    className="w-full px-4 py-3 text-sm rounded-xl border focus:outline-none" style={{ borderColor:'#e2e8f0', backgroundColor:'#f8fafc' }} />
+                </div>
+                <div>
+                  <label className="block text-xs font-black uppercase tracking-wide mb-1.5" style={{ color:'#374151' }}>Volume (CBM)</label>
+                  <input type="number" placeholder="10" value={form.volume} onChange={e => setForm2(p => ({...p, volume:e.target.value}))}
+                    className="w-full px-4 py-3 text-sm rounded-xl border focus:outline-none" style={{ borderColor:'#e2e8f0', backgroundColor:'#f8fafc' }} />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-black uppercase tracking-wide mb-1.5" style={{ color:'#374151' }}>Special requirements</label>
+                <textarea rows={2} placeholder="Temperature control, fragile items, hazmat requirements..." value={form.notes} onChange={e => setForm2(p => ({...p, notes:e.target.value}))}
+                  className="w-full px-4 py-3 text-sm rounded-xl border focus:outline-none resize-none" style={{ borderColor:'#e2e8f0', backgroundColor:'#f8fafc' }} />
+              </div>
+
+              <div className="flex gap-3">
+                <button onClick={() => { setForm(false); setError(null) }} className="flex-1 py-3 rounded-xl text-sm font-bold border hover:bg-slate-50" style={{ borderColor:'#e2e8f0', color:'#374151' }}>Cancel</button>
+                <button onClick={requestQuotes} disabled={requesting}
+                  className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-black text-white disabled:opacity-70"
+                  style={{ background:'linear-gradient(135deg,#7c3aed,#6d28d9)' }}>
+                  {requesting ? <><Loader2 className="h-4 w-4 animate-spin" />Getting quotes...</> : <>Get quotes from 5 carriers</>}
+                </button>
+              </div>
+            </div>
           </div>
         </div>
-      </div>
+      )}
     </div>
   )
 }
