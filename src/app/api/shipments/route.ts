@@ -8,25 +8,23 @@ export async function GET() {
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   try {
-    let dbUser = await prisma.user.findUnique({
+    const dbUser = await prisma.user.findUnique({
       where: { supabaseId: user.id },
-      include: { businesses: { take: 1 } }
+      include: { business: true }
     })
-    if (!dbUser?.businesses?.[0]) return NextResponse.json({ shipments: [], quotes: [] })
+
+    if (!dbUser?.business) return NextResponse.json({ shipments: [], quotes: [] })
 
     const [shipments, quotes] = await Promise.all([
       prisma.shipment.findMany({
-        where: { businessId: dbUser.businesses[0].id },
+        where: { businessId: dbUser.business.id },
         orderBy: { createdAt: 'desc' },
         take: 20,
       }),
       prisma.logisticsQuote.findMany({
-        where: { requesterId: dbUser.id },
+        where: { businessId: dbUser.business.id },
         orderBy: { createdAt: 'desc' },
         take: 20,
-        include: {
-          provider: { select: { name: true, country: true, trustScore: true } }
-        }
       })
     ])
 
@@ -48,7 +46,7 @@ export async function POST(request: NextRequest) {
 
     let dbUser = await prisma.user.findUnique({
       where: { supabaseId: user.id },
-      include: { businesses: { take: 1 } }
+      include: { business: true }
     })
 
     if (!dbUser) {
@@ -58,18 +56,17 @@ export async function POST(request: NextRequest) {
           email: user.email || '',
           name: user.user_metadata?.full_name || 'User',
         },
-        include: { businesses: { take: 1 } }
+        include: { business: true }
       }) as any
     }
 
-    // If user has no business, create a placeholder
-    let business = (dbUser as any).businesses?.[0]
+    let business = (dbUser as any).business
     if (!business) {
       business = await prisma.business.create({
         data: {
           userId: dbUser!.id,
           name: user.user_metadata?.full_name || 'My Business',
-          slug: `user-${dbUser!.id.slice(0,8)}`,
+          slug: `user-${dbUser!.id.slice(0, 8)}-${Date.now()}`,
           type: 'IMPORTER',
           country: 'NG',
           trustScore: 0,
@@ -82,38 +79,39 @@ export async function POST(request: NextRequest) {
       })
     }
 
-    // Create quote request — simulate getting quotes from logistics providers
+    // Create quote requests for each verified logistics provider
     const providers = await prisma.business.findMany({
       where: { type: 'LOGISTICS_PROVIDER', verificationStatus: 'VERIFIED' },
       take: 3,
     })
 
-    const quoteRequests = []
+    const quotes = []
     for (const provider of providers) {
       const basePrice = type === 'air' ? 1200 : type === 'sea_fcl' ? 2800 : 850
-      const variation  = 0.8 + Math.random() * 0.4
-      quoteRequests.push(
-        prisma.logisticsQuote.create({
-          data: {
-            requesterId:  dbUser!.id,
-            providerId:   provider.id,
-            origin:       origin || '',
-            destination:  destination || '',
-            cargoType:    cargoType || '',
-            weight:       weight ? parseFloat(weight) : null,
-            volume:       volume ? parseFloat(volume) : null,
-            price:        parseFloat((basePrice * variation).toFixed(0)),
-            currency:     'USD',
-            transitDays:  type === 'air' ? Math.floor(3 + Math.random()*4) : type === 'sea_fcl' ? Math.floor(18 + Math.random()*14) : Math.floor(5 + Math.random()*7),
-            validUntil:   new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-            notes:        notes || '',
-            status:       'QUOTED',
-          }
-        })
-      )
+      const price = Math.round(basePrice * (0.8 + Math.random() * 0.4))
+      const transitDays = type === 'air'
+        ? Math.floor(3 + Math.random() * 4)
+        : type === 'sea_fcl'
+        ? Math.floor(18 + Math.random() * 14)
+        : Math.floor(5 + Math.random() * 7)
+
+      const quote = await prisma.logisticsQuote.create({
+        data: {
+          businessId: business.id,
+          origin: origin || '',
+          destination: destination || '',
+          cargoType: cargoType || '',
+          weight: weight ? parseFloat(weight) : 0,
+          volume: volume ? parseFloat(volume) : null,
+          incoterms: type === 'air' ? 'DAP' : 'CIF',
+          requestedDate: new Date(),
+          notes: `Provider: ${provider.name} | Price: $${price} | Transit: ${transitDays} days | ${notes || ''}`,
+          status: 'QUOTED',
+        }
+      })
+      quotes.push({ ...quote, provider: { name: provider.name, country: provider.country, trustScore: provider.trustScore }, price, transitDays })
     }
 
-    const quotes = await Promise.all(quoteRequests)
     return NextResponse.json({ quotes, message: `${quotes.length} quotes received` })
   } catch (error) {
     console.error('Shipments POST error:', error)

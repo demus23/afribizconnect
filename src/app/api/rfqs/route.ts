@@ -2,34 +2,25 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { createClient } from '@/lib/supabase/server'
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   try {
-    // Find the user's business
     const dbUser = await prisma.user.findUnique({
       where: { supabaseId: user.id },
-      include: { businesses: { take: 1 } }
+      include: { business: { include: { asSupplier: true } } }
     })
 
-    if (!dbUser) return NextResponse.json({ rfqs: [] })
-
-    const rfqs = await prisma.rFQ.findMany({
-      where: { userId: dbUser.id },
-      orderBy: { createdAt: 'desc' },
-      include: {
-        quotes: {
-          include: { supplier: { select: { name: true, country: true, trustScore: true } } }
-        }
-      }
+    return NextResponse.json({
+      user: dbUser,
+      business: dbUser?.business || null,
+      email: user.email,
+      name: user.user_metadata?.full_name || dbUser?.name || '',
     })
-
-    return NextResponse.json({ rfqs })
   } catch (error) {
-    console.error('RFQ GET error:', error)
-    return NextResponse.json({ error: 'Failed to fetch RFQs' }, { status: 500 })
+    return NextResponse.json({ error: 'Failed to fetch profile' }, { status: 500 })
   }
 }
 
@@ -40,66 +31,63 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json()
-    const { title, description, category, targetCountry, quantity, unit, budget, deadline, paymentTerms } = body
+    const { section, data } = body
 
-    if (!title || !description || !category) {
-      return NextResponse.json({ error: 'Title, description and category are required' }, { status: 400 })
-    }
-
-    // Find or create DB user
     let dbUser = await prisma.user.findUnique({ where: { supabaseId: user.id } })
     if (!dbUser) {
       dbUser = await prisma.user.create({
-        data: {
-          supabaseId: user.id,
-          email: user.email || '',
-          name: user.user_metadata?.full_name || 'User',
-        }
+        data: { supabaseId: user.id, email: user.email || '', name: user.user_metadata?.full_name || '' }
       })
     }
 
-    const rfq = await prisma.rFQ.create({
-      data: {
-        userId: dbUser.id,
-        title,
-        description,
-        category,
-        targetCountry: targetCountry || '',
-        quantity: quantity ? parseFloat(quantity) : null,
-        unit: unit || '',
-        budget: budget ? parseFloat(budget) : null,
-        deadline: deadline ? new Date(deadline) : null,
-        paymentTerms: paymentTerms || [],
-        status: 'OPEN',
+    if (section === 'profile') {
+      await prisma.user.update({
+        where: { id: dbUser.id },
+        data: { name: data.name || dbUser.name }
+      })
+      await supabase.auth.updateUser({ data: { full_name: data.name } })
+      return NextResponse.json({ success: true, message: 'Profile saved' })
+    }
+
+    if (section === 'business') {
+      const existing = await prisma.business.findUnique({ where: { userId: dbUser.id } })
+
+      const bizData = {
+        name:          data.businessName || 'My Business',
+        type:          (data.businessType as any) || 'IMPORTER',
+        country:       data.country       || 'NG',
+        city:          data.city          || '',
+        description:   data.description   || '',
+        annualRevenue: data.annualRevenue  || '',
+        employeeCount: data.employeeCount  || '',
+        websiteUrl:    data.websiteUrl     || '',
+        paymentTerms:  data.paymentTerms   || [],
+        targetMarkets: data.targetMarkets  || [],
+        categories:    data.categories     || [],
+        certifications:data.certifications || [],
       }
-    })
 
-    return NextResponse.json({ rfq })
+      if (existing) {
+        await prisma.business.update({ where: { id: existing.id }, data: bizData })
+      } else {
+        const slug = (data.businessName || 'business').toLowerCase().replace(/[^a-z0-9]/g, '-')
+          + '-' + dbUser.id.slice(0, 6) + '-' + Date.now()
+        await prisma.business.create({
+          data: {
+            ...bizData,
+            userId: dbUser.id,
+            slug,
+            trustScore: 10,
+            verificationStatus: 'UNVERIFIED',
+          }
+        })
+      }
+      return NextResponse.json({ success: true, message: 'Business profile saved' })
+    }
+
+    return NextResponse.json({ error: 'Unknown section' }, { status: 400 })
   } catch (error) {
-    console.error('RFQ POST error:', error)
-    return NextResponse.json({ error: 'Failed to create RFQ' }, { status: 500 })
-  }
-}
-
-export async function PATCH(request: NextRequest) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
-  try {
-    const body = await request.json()
-    const { id, status } = body
-
-    const dbUser = await prisma.user.findUnique({ where: { supabaseId: user.id } })
-    if (!dbUser) return NextResponse.json({ error: 'User not found' }, { status: 404 })
-
-    const rfq = await prisma.rFQ.updateMany({
-      where: { id, userId: dbUser.id },
-      data: { status }
-    })
-
-    return NextResponse.json({ success: true })
-  } catch (error) {
-    return NextResponse.json({ error: 'Failed to update RFQ' }, { status: 500 })
+    console.error('Profile save error:', error)
+    return NextResponse.json({ error: 'Failed to save' }, { status: 500 })
   }
 }

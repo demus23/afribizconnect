@@ -11,16 +11,15 @@ export async function GET() {
     const dbUser = await prisma.user.findUnique({
       where: { supabaseId: user.id },
       include: {
-        businesses: {
-          take: 1,
-          include: { asSupplier: true }
-        }
-      }
+  business: {
+    include: { asSupplier: true }
+  }
+}
     })
 
     return NextResponse.json({
       user: dbUser,
-      business: dbUser?.businesses?.[0] || null,
+      business: dbUser?.business || null,
       email: user.email,
       name: user.user_metadata?.full_name || '',
     })
@@ -48,10 +47,9 @@ export async function POST(request: NextRequest) {
     if (section === 'profile') {
       await prisma.user.update({
         where: { id: dbUser.id },
-        data: {
-          name:  data.name  || dbUser.name,
-          phone: data.phone || dbUser.phone,
-        }
+       data: {
+  name: data.name || dbUser.name,
+}
       })
       // Also update Supabase auth metadata
       await supabase.auth.updateUser({ data: { full_name: data.name } })

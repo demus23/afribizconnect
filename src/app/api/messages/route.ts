@@ -12,10 +12,9 @@ export async function GET(request: NextRequest) {
 
   try {
     let dbUser = await prisma.user.findUnique({ where: { supabaseId: user.id } })
-    if (!dbUser) return NextResponse.json({ messages: [], conversations: [] })
+    if (!dbUser) return NextResponse.json({ messages: [], conversations: [], userId: null })
 
     if (conversationWith) {
-      // Get messages between two users
       const messages = await prisma.message.findMany({
         where: {
           OR: [
@@ -31,38 +30,63 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ messages })
     }
 
-    // Get all conversations (unique people messaged)
+    // Get sent messages — include receiver
     const sent = await prisma.message.findMany({
       where: { senderId: dbUser.id },
       include: {
-        receiver: { select: { id: true, name: true, avatarUrl: true, businesses: { select: { name: true, country: true, trustScore: true }, take: 1 } } },
+        receiver: {
+          select: {
+            id: true, name: true, avatarUrl: true,
+            business: { select: { name: true, country: true, trustScore: true } }
+          }
+        },
       },
       orderBy: { createdAt: 'desc' },
       distinct: ['receiverId'],
       take: 20,
     })
 
+    // Get received messages — include sender
     const received = await prisma.message.findMany({
       where: { receiverId: dbUser.id },
       include: {
-        sender: { select: { id: true, name: true, avatarUrl: true, businesses: { select: { name: true, country: true, trustScore: true }, take: 1 } } },
+        sender: {
+          select: {
+            id: true, name: true, avatarUrl: true,
+            business: { select: { name: true, country: true, trustScore: true } }
+          }
+        },
       },
       orderBy: { createdAt: 'desc' },
       distinct: ['senderId'],
       take: 20,
     })
 
-    // Get latest message for each conversation
-    const conversations = new Map()
-    for (const m of [...sent, ...received]) {
-      const other = m.receiver || m.sender
+    // Build conversation map
+    const conversations = new Map<string, any>()
+
+    for (const m of sent) {
+      const other = m.receiver
       if (!other || other.id === dbUser.id) continue
       if (!conversations.has(other.id)) {
         conversations.set(other.id, {
           user: other,
           lastMessage: m.content,
           lastTime: m.createdAt,
-          unread: !m.readAt && m.senderId !== dbUser.id,
+          unread: false,
+        })
+      }
+    }
+
+    for (const m of received) {
+      const other = m.sender
+      if (!other || other.id === dbUser.id) continue
+      if (!conversations.has(other.id)) {
+        conversations.set(other.id, {
+          user: other,
+          lastMessage: m.content,
+          lastTime: m.createdAt,
+          unread: !m.readAt,
         })
       }
     }
