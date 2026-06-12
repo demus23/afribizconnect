@@ -1,29 +1,79 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { createClient } from '@/lib/supabase/server'
 
-export async function GET(request: NextRequest) {
-  const { searchParams } = new URL(request.url)
-  const oppType = searchParams.get('oppType') || ''
-  const sector  = searchParams.get('sector')  || ''
-  const country = searchParams.get('country') || ''
-  const limit   = parseInt(searchParams.get('limit') || '20')
+export async function POST(request: NextRequest) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   try {
-    const where: any = { isActive: true }
-    if (oppType) where.type    = oppType
-    if (sector)  where.sector  = { contains: sector,  mode: 'insensitive' }
-    if (country) where.country = country
+    const body = await request.json()
+    const { title, type, sector, country, stage, description, targetAmount, minimumTicket, expectedReturn, timeline, deadline, useOfFunds, highlights } = body
 
-    const opportunities = await prisma.investmentOpportunity.findMany({
-      where,
-      include: { business: { select: { name: true, trustScore: true, verificationStatus: true } } },
-      orderBy: [{ viewCount: 'desc' }, { targetAmount: 'desc' }],
-      take: limit,
+    if (!title || !type || !sector || !country || !targetAmount || !minimumTicket) {
+      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
+    }
+
+    let dbUser = await prisma.user.findUnique({
+      where: { supabaseId: user.id },
+      include: { business: true }
     })
 
-    return NextResponse.json({ opportunities, total: opportunities.length })
+    if (!dbUser) {
+      dbUser = await prisma.user.create({
+        data: { supabaseId: user.id, email: user.email || '', name: user.user_metadata?.full_name || '' },
+        include: { business: true }
+      }) as any
+    }
+
+    let business = (dbUser as any).business
+    if (!business) {
+      business = await prisma.business.create({
+        data: {
+          userId: dbUser!.id,
+          name: user.user_metadata?.full_name || 'My Business',
+          slug: `biz-${dbUser!.id.slice(0,8)}-${Date.now()}`,
+          type: 'INVESTOR',
+          country: country.slice(0,2).toUpperCase(),
+          trustScore: 10,
+          verificationStatus: 'UNVERIFIED',
+          paymentTerms: [], targetMarkets: [], categories: [], certifications: [],
+        }
+      })
+    }
+
+    const slug = title.toLowerCase().replace(/[^a-z0-9]/g,'-').slice(0,50) + '-' + Date.now()
+
+    const fullDesc = [
+      description,
+      useOfFunds ? `\n\nUse of funds:\n${useOfFunds}` : '',
+      highlights ? `\n\nKey highlights:\n${highlights}` : '',
+    ].join('')
+
+    const opportunity = await prisma.investmentOpportunity.create({
+      data: {
+        businessId:     business.id,
+        title,
+        slug,
+        type:           type as any,
+        sector,
+        country,
+        stage:          stage || null,
+        description:    fullDesc,
+        targetAmount:   parseFloat(targetAmount),
+        minimumTicket:  parseFloat(minimumTicket),
+        currency:       'USD',
+        expectedReturn: expectedReturn ? parseFloat(expectedReturn) : null,
+        timeline:       timeline || null,
+        deadline:       deadline ? new Date(deadline) : null,
+        isActive:       false, // pending review
+      }
+    })
+
+    return NextResponse.json({ opportunity })
   } catch (error) {
-    console.error('Opportunities API error:', error)
-    return NextResponse.json({ error: 'Failed to fetch opportunities' }, { status: 500 })
+    console.error('Opportunity POST error:', error)
+    return NextResponse.json({ error: 'Failed to create opportunity' }, { status: 500 })
   }
 }
