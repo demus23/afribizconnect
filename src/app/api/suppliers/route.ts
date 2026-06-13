@@ -3,46 +3,51 @@ import { prisma } from '@/lib/prisma'
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
-  const search   = searchParams.get('search') || ''
-  const country  = searchParams.get('country') || ''
+  const search   = searchParams.get('search')   || ''
+  const country  = searchParams.get('country')  || ''
   const category = searchParams.get('category') || ''
-  const type     = searchParams.get('type') || 'SUPPLIER'
+  const type     = searchParams.get('type')      || ''
+  const sort     = searchParams.get('sort')      || 'trustScore'
   const page     = parseInt(searchParams.get('page') || '1')
-  const limit    = parseInt(searchParams.get('limit') || '12')
-  const sort     = searchParams.get('sort') || 'trustScore'
+  const limit    = parseInt(searchParams.get('limit') || '20')
+  const skip     = (page - 1) * limit
 
   try {
+    // Build where clause — show SUPPLIER and LOGISTICS_PROVIDER and DISTRIBUTOR types
     const where: any = {
       verificationStatus: 'VERIFIED',
-      type: type as any,
+      NOT: { type: { in: ['INVESTOR', 'PRIVATE_EQUITY', 'IMPORTER'] } },
     }
 
-    if (country) where.country = country
-    if (category) where.categories = { has: category }
+    if (country)  where.country  = country
+    if (type)     where.type     = type
     if (search) {
       where.OR = [
-        { name: { contains: search, mode: 'insensitive' } },
+        { name:        { contains: search, mode: 'insensitive' } },
         { description: { contains: search, mode: 'insensitive' } },
-        { categories: { has: search } },
+        { city:        { contains: search, mode: 'insensitive' } },
+        { categories:  { has: search } },
       ]
     }
+    if (category && category !== 'All') {
+      where.categories = { has: category }
+    }
 
-    const orderBy: any = sort === 'trustScore'
-      ? { trustScore: 'desc' }
-      : sort === 'name'
-      ? { name: 'asc' }
-      : { createdAt: 'desc' }
+    const orderBy: any =
+      sort === 'trustScore' ? { trustScore: 'desc' }
+      : sort === 'name'     ? { name: 'asc' }
+      : sort === 'newest'   ? { createdAt: 'desc' }
+      : { trustScore: 'desc' }
 
     const [businesses, total] = await Promise.all([
       prisma.business.findMany({
         where,
+        orderBy,
+        skip,
+        take: limit,
         include: {
           asSupplier: true,
-          user: { select: { avatarUrl: true } },
         },
-        orderBy,
-        skip: (page - 1) * limit,
-        take: limit,
       }),
       prisma.business.count({ where }),
     ])
