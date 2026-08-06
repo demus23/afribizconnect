@@ -1,78 +1,114 @@
 import Link from 'next/link'
-import { Globe2, MapPin, TrendingUp, Shield, ArrowRight } from 'lucide-react'
+
+const STATS = [
+  { val:'3,200+', label:'Verified suppliers' },
+  { val:'54',     label:'African markets'    },
+  { val:'$2.8B',  label:'Trade facilitated'  },
+  { val:'480+',   label:'Active investors'    },
+]
+const TEAM = [
+  { name:'Natnael Demus',  role:'Founder & CEO',                location:'Dubai, UAE',     initials:'ND', color:'#C9A84C' },
+  { name:'Aisha Mohammed', role:'Head of Trust & Verification', location:'Lagos, Nigeria',  initials:'AM', color:'#00D4AA' },
+  { name:'Chen Wei',       role:'Head of Supplier Relations',   location:'Shenzhen, China', initials:'CW', color:'#7c3aed' },
+  { name:'Omar Hassan',    role:'Head of Trade Finance',        location:'Nairobi, Kenya',  initials:'OH', color:'#1e40af' },
+]
 
 export default function AboutPage() {
   return (
-    <div style={{ fontFamily:"'Geist Sans',system-ui,sans-serif" }}>
-      <header className="border-b" style={{ borderColor:'#f1f5f9' }}>
-        <div className="max-w-7xl mx-auto px-5 sm:px-8 h-16 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2.5">
-            <div className="h-8 w-8 rounded-xl flex items-center justify-center" style={{ background:'linear-gradient(135deg,#1e40af,#0f172a)' }}><Globe2 className="h-4 w-4 text-white" /></div>
-            <span className="font-black text-[15px]">AfriBiz<span style={{ color:'#f59e0b' }}>Connect</span></span>
-          </Link>
-          <Link href="/register" className="text-sm font-black px-5 py-2.5 rounded-xl text-white" style={{ background:'linear-gradient(135deg,#1e40af,#2563eb)' }}>Get started</Link>
-        </div>
-      </header>
+    <div style={{ fontFamily:'"Inter",system-ui,sans-serif', background:'#0A0E1A', minHeight:'100vh', color:'#E8EDF5' }}>
 
-      <section className="py-28 px-5 sm:px-8 text-center" style={{ background:'linear-gradient(180deg,#f0f6ff,#fff)' }}>
-        <div className="max-w-3xl mx-auto">
-          <div className="text-xs font-black uppercase tracking-[0.3em] mb-5" style={{ color:'#1e40af' }}>About AfriBizConnect</div>
-          <h1 className="text-5xl font-black tracking-tighter mb-6" style={{ color:'#0f172a' }}>Building Africa's<br />trade infrastructure</h1>
-          <p className="text-lg leading-relaxed" style={{ color:'#64748b' }}>Founded in Dubai with a single mission: eliminate the trust and information gaps that make cross-border African trade harder than it needs to be.</p>
+    <nav style={{ background:'#0A0E1A', borderBottom:'1px solid #1A2540', padding:'0 48px', height:'64px', display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+      <Link href="/" style={{ display:'flex', alignItems:'center', gap:'10px', textDecoration:'none' }}>
+        <div style={{ width:'28px', height:'28px', background:'#C9A84C', borderRadius:'4px', display:'flex', alignItems:'center', justifyContent:'center' }}><span style={{ fontSize:'12px', fontWeight:900, color:'#0A0E1A' }}>A</span></div>
+        <span style={{ fontSize:'12px', fontWeight:800, color:'#E8EDF5', letterSpacing:'0.08em' }}>AFRIBIZCONNECT</span>
+      </Link>
+      <div style={{ display:'flex', gap:'10px' }}>
+        <Link href="/login"    style={{ fontSize:'12px', color:'#C9A84C', textDecoration:'none', fontWeight:600, padding:'8px 18px', border:'1px solid #C9A84C44', borderRadius:'4px' }}>Sign in</Link>
+        <Link href="/register" style={{ fontSize:'12px', color:'#0A0E1A', background:'#C9A84C', textDecoration:'none', fontWeight:700, padding:'8px 18px', borderRadius:'4px' }}>Get access</Link>
+      </div>
+    </nav>
+      {/* Hero */}
+      <section style={{ maxWidth:'1100px', margin:'0 auto', padding:'100px 48px 80px', position:'relative' }}>
+        <div style={{ position:'absolute', inset:0, backgroundImage:'linear-gradient(#1A254008 1px,transparent 1px),linear-gradient(90deg,#1A254008 1px,transparent 1px)', backgroundSize:'48px 48px', pointerEvents:'none' }} />
+        <div style={{ position:'relative', maxWidth:'640px' }}>
+          <div style={{ fontSize:'11px', color:'#C9A84C', fontWeight:700, letterSpacing:'0.2em', textTransform:'uppercase', marginBottom:'16px', fontFamily:'monospace' }}>About AfriBizConnect</div>
+          <h1 style={{ fontSize:'clamp(36px,5vw,64px)', fontWeight:900, letterSpacing:'-0.03em', lineHeight:1.05, marginBottom:'24px' }}>
+            Building Africa's<br /><span style={{ color:'#C9A84C' }}>trade infrastructure.</span>
+          </h1>
+          <p style={{ fontSize:'18px', color:'#4A5568', lineHeight:1.7, marginBottom:'40px' }}>
+            Founded in Dubai in 2024 with a single mission: eliminate the trust and information gaps that make cross-border African trade harder than it needs to be.
+          </p>
+          <div style={{ display:'flex', gap:'12px' }}>
+            <Link href="/register" style={{ padding:'12px 28px', background:'#C9A84C', color:'#0A0E1A', borderRadius:'4px', textDecoration:'none', fontWeight:700, fontSize:'14px' }}>Join the platform</Link>
+            <Link href="/contact"  style={{ padding:'12px 28px', background:'transparent', color:'#E8EDF5', border:'1px solid #1A2540', borderRadius:'4px', textDecoration:'none', fontWeight:600, fontSize:'14px' }}>Contact us</Link>
+          </div>
         </div>
       </section>
 
-      <section className="py-20 px-5 sm:px-8 border-y" style={{ borderColor:'#f1f5f9' }}>
-        <div className="max-w-7xl mx-auto grid md:grid-cols-3 gap-8">
+      {/* Stats bar */}
+      <div style={{ borderTop:'1px solid #1A2540', borderBottom:'1px solid #1A2540', background:'#0F1629' }}>
+        <div style={{ maxWidth:'1100px', margin:'0 auto', padding:'0 48px', display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:'1px', background:'#1A2540' }}>
+          {STATS.map(s => (
+            <div key={s.label} style={{ background:'#0F1629', padding:'36px 28px', textAlign:'center' }}>
+              <div style={{ fontSize:'36px', fontWeight:900, color:'#C9A84C', fontFamily:'monospace', marginBottom:'6px' }}>{s.val}</div>
+              <div style={{ fontSize:'11px', color:'#4A5568', letterSpacing:'0.1em', textTransform:'uppercase' }}>{s.label}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Values */}
+      <section style={{ maxWidth:'1100px', margin:'0 auto', padding:'80px 48px' }}>
+        <div style={{ fontSize:'11px', color:'#4A5568', letterSpacing:'0.15em', textTransform:'uppercase', marginBottom:'40px', fontFamily:'monospace' }}>Our values</div>
+        <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:'1px', background:'#1A2540' }}>
           {[
-            { icon:Shield,     title:'Trust first',  desc:'Every business is KYB-verified with a public trust score. No more guessing if a supplier is legitimate.',                                 color:'#059669' },
-            { icon:Globe2,     title:'54 markets',   desc:'Built for African trade corridors — UAE to Nigeria, China to Ghana, Turkey to Kenya and every route in between.',                      color:'#1e40af' },
-            { icon:TrendingUp, title:'Capital access',desc:'African businesses deserve the same quality of trade finance and investment infrastructure as businesses anywhere else in the world.', color:'#7c3aed' },
-          ].map(item => (
-            <div key={item.title} className="text-center p-8 rounded-2xl border" style={{ borderColor:'#e8edf3' }}>
-              <div className="h-14 w-14 rounded-2xl flex items-center justify-center mx-auto mb-5" style={{ backgroundColor:`${item.color}15` }}>
-                <item.icon className="h-7 w-7" style={{ color:item.color }} />
-              </div>
-              <h3 className="text-lg font-black mb-3" style={{ color:'#0f172a' }}>{item.title}</h3>
-              <p className="text-sm leading-relaxed" style={{ color:'#64748b' }}>{item.desc}</p>
+            { title:'Trust first',    color:'#00D4AA', desc:'Every business is KYB-verified with a public trust score. No guessing if a supplier is legitimate.' },
+            { title:'Africa-built',   color:'#C9A84C', desc:'Built for African trade corridors — UAE to Nigeria, China to Ghana, Turkey to Kenya and every route in between.' },
+            { title:'Capital access', color:'#7c3aed', desc:'African businesses deserve the same quality of trade finance and investment tools as businesses anywhere in the world.' },
+          ].map(v => (
+            <div key={v.title} style={{ background:'#0F1629', padding:'40px' }}>
+              <div style={{ width:'28px', height:'3px', background:v.color, marginBottom:'20px', borderRadius:'2px' }} />
+              <h3 style={{ fontSize:'18px', fontWeight:800, color:'#E8EDF5', marginBottom:'12px' }}>{v.title}</h3>
+              <p style={{ fontSize:'14px', color:'#4A5568', lineHeight:1.7 }}>{v.desc}</p>
             </div>
           ))}
         </div>
       </section>
 
-      <section className="py-20 px-5 sm:px-8">
-        <div className="max-w-7xl mx-auto">
-          <h2 className="text-3xl font-black tracking-tighter mb-3" style={{ color:'#0f172a' }}>Our team</h2>
-          <p className="text-sm mb-12" style={{ color:'#64748b' }}>Built by trade finance veterans, technologists, and African business operators.</p>
-          <div className="grid md:grid-cols-4 gap-5">
-            {[
-              { name:'Natnael Demus',  role:'Founder & CEO',                   location:'Dubai, UAE',       initials:'ND', color:'#1e40af' },
-              { name:'Aisha Mohammed', role:'Head of Trust & Verification',    location:'Lagos, Nigeria',    initials:'AM', color:'#059669' },
-              { name:'Chen Wei',       role:'Head of Supplier Relations',      location:'Shenzhen, China',   initials:'CW', color:'#7c3aed' },
-              { name:'Omar Hassan',    role:'Head of Finance',                 location:'Nairobi, Kenya',    initials:'OH', color:'#d97706' },
-            ].map(m => (
-              <div key={m.name} className="rounded-2xl border p-6 text-center" style={{ borderColor:'#e8edf3' }}>
-                <div className="h-14 w-14 rounded-2xl flex items-center justify-center mx-auto mb-4 text-white font-black text-lg" style={{ backgroundColor:m.color }}>{m.initials}</div>
-                <div className="text-sm font-black mb-1" style={{ color:'#0f172a' }}>{m.name}</div>
-                <div className="text-xs mb-2" style={{ color:'#64748b' }}>{m.role}</div>
-                <div className="flex items-center justify-center gap-1 text-xs" style={{ color:'#94a3b8' }}><MapPin className="h-3 w-3" />{m.location}</div>
+      {/* Team */}
+      <section style={{ borderTop:'1px solid #1A2540', background:'#0F1629' }}>
+        <div style={{ maxWidth:'1100px', margin:'0 auto', padding:'80px 48px' }}>
+          <div style={{ fontSize:'11px', color:'#4A5568', letterSpacing:'0.15em', textTransform:'uppercase', marginBottom:'40px', fontFamily:'monospace' }}>The team</div>
+          <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:'16px' }}>
+            {TEAM.map(m => (
+              <div key={m.name} style={{ background:'#0A0E1A', border:'1px solid #1A2540', borderRadius:'12px', padding:'28px 20px', textAlign:'center' }}>
+                <div style={{ width:'52px', height:'52px', borderRadius:'50%', background:m.color, display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto 16px', fontSize:'18px', fontWeight:900, color:'#0A0E1A' }}>{m.initials}</div>
+                <div style={{ fontSize:'13px', fontWeight:700, color:'#E8EDF5', marginBottom:'4px' }}>{m.name}</div>
+                <div style={{ fontSize:'11px', color:'#4A5568', marginBottom:'6px' }}>{m.role}</div>
+                <div style={{ fontSize:'10px', color:'#C9A84C', fontFamily:'monospace' }}>{m.location}</div>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      <section className="py-20 px-5 sm:px-8 text-center border-t" style={{ borderColor:'#f1f5f9', background:'#fafbfc' }}>
-        <h2 className="text-3xl font-black tracking-tighter mb-4" style={{ color:'#0f172a' }}>Ready to join us?</h2>
-        <p className="text-sm mb-8" style={{ color:'#64748b' }}>Join 12,400+ businesses building the future of African trade.</p>
-        <div className="flex flex-wrap items-center justify-center gap-3">
-          <Link href="/register" className="flex items-center gap-2 text-sm font-black px-8 py-4 rounded-2xl text-white" style={{ background:'linear-gradient(135deg,#1e40af,#2563eb)' }}>Create free account <ArrowRight className="h-4 w-4" /></Link>
-          <Link href="/contact" className="flex items-center gap-2 text-sm font-bold px-8 py-4 rounded-2xl border" style={{ borderColor:'#e2e8f0', color:'#374151' }}>Contact us</Link>
-        </div>
+      {/* CTA */}
+      <section style={{ borderTop:'1px solid #1A2540', padding:'80px 48px', textAlign:'center' }}>
+        <h2 style={{ fontSize:'40px', fontWeight:900, letterSpacing:'-0.02em', marginBottom:'16px' }}>Join Africa's trade OS</h2>
+        <p style={{ fontSize:'16px', color:'#4A5568', marginBottom:'36px' }}>12,400+ businesses trust AfriBizConnect for cross-border trade.</p>
+        <Link href="/register" style={{ padding:'14px 40px', background:'#C9A84C', color:'#0A0E1A', borderRadius:'4px', textDecoration:'none', fontWeight:700, fontSize:'14px', letterSpacing:'0.05em' }}>Get started free →</Link>
       </section>
-      <div className="border-t py-5 text-center text-xs" style={{ borderColor:'#f1f5f9', color:'#94a3b8' }}>
-        <Link href="/" className="hover:text-blue-600 transition-colors">← Back to AfriBizConnect</Link>
+
+    <footer style={{ borderTop:'1px solid #1A2540', padding:'28px 48px' }}>
+      <div style={{ maxWidth:'1100px', margin:'0 auto', display:'flex', justifyContent:'space-between', alignItems:'center', flexWrap:'wrap', gap:'12px' }}>
+        <span style={{ fontSize:'11px', color:'#4A5568', fontFamily:'monospace' }}>© 2025 AfriBizConnect Ltd. DIFC, Dubai, UAE</span>
+        <div style={{ display:'flex', gap:'20px' }}>
+          {[['Privacy','/privacy'],['Terms','/terms'],['Contact','/contact'],['← Home','/']].map(([l,h]) => (
+            <Link key={l} href={h} style={{ fontSize:'11px', color:'#4A5568', textDecoration:'none' }}>{l}</Link>
+          ))}
+        </div>
       </div>
+    </footer>
     </div>
   )
 }

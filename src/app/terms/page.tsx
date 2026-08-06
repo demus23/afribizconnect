@@ -1,44 +1,77 @@
 import Link from 'next/link'
-import { Globe2 } from 'lucide-react'
 
-const SECTIONS = [
-  { title:'1. Acceptance of terms', content:'By accessing or using AfriBizConnect, you agree to be bound by these Terms of Service. If you do not agree to these terms, you may not use our platform. These terms apply to all users including importers, exporters, suppliers, logistics providers, and investors.' },
-  { title:'2. Platform description', content:'AfriBizConnect is a B2B trade infrastructure platform connecting African businesses with global suppliers, logistics providers, trade financiers, and investors. We facilitate connections and provide tools for trade management but are not a party to any transaction between users.' },
-  { title:'3. User accounts', content:'You must provide accurate and complete information when creating an account. You are responsible for maintaining the security of your account credentials. You must notify us immediately of any unauthorized access. One person or business entity may not maintain multiple accounts.' },
-  { title:'4. Verified business profiles', content:'Verification badges are awarded after our KYB review process. Misrepresenting your business, providing false documents, or using the verified badge falsely will result in immediate account termination and may lead to legal action. Trust scores are calculated based on platform activity and verification data.' },
-  { title:'5. Prohibited activities', content:'You may not use our platform for illegal trade, money laundering, fraud, or any activity that violates applicable laws. You may not circumvent our platform to transact directly with connections made through AfriBizConnect during an active subscription. Spam, abuse, or harassment of other users is strictly prohibited.' },
-  { title:'6. Intellectual property', content:'AfriBizConnect and its content, features, and functionality are owned by AfriBizConnect Ltd and protected by international copyright, trademark, and other intellectual property laws. You may not reproduce, distribute, or create derivative works without our express written permission.' },
-  { title:'7. Limitation of liability', content:'AfriBizConnect is a marketplace platform. We do not guarantee the quality, safety, or legality of products or services offered. We are not liable for losses arising from transactions between users, customs delays, payment disputes, or logistics issues. Our total liability is limited to fees paid in the 12 months prior to any claim.' },
-  { title:'8. Governing law', content:'These terms are governed by the laws of the Dubai International Financial Centre (DIFC). Any disputes shall be subject to the exclusive jurisdiction of the DIFC Courts. If you are a consumer, you may also have rights under your local law.' },
-]
-
-export default function TermsPage() {
+export default function TermsofServicePage() {
   return (
-    <div style={{ fontFamily:"'Geist Sans',system-ui,sans-serif" }}>
-      <header className="border-b" style={{ borderColor:'#f1f5f9' }}>
-        <div className="max-w-7xl mx-auto px-5 sm:px-8 h-16 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2.5">
-            <div className="h-8 w-8 rounded-xl flex items-center justify-center" style={{ background:'linear-gradient(135deg,#1e40af,#0f172a)' }}><Globe2 className="h-4 w-4 text-white" /></div>
-            <span className="font-black text-[15px]">AfriBiz<span style={{ color:'#f59e0b' }}>Connect</span></span>
-          </Link>
+    <div style={{ fontFamily:'"Inter",system-ui,sans-serif', background:'#0A0E1A', minHeight:'100vh', color:'#E8EDF5' }}>
+
+    <nav style={{ background:'#0A0E1A', borderBottom:'1px solid #1A2540', padding:'0 48px', height:'64px', display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+      <Link href="/" style={{ display:'flex', alignItems:'center', gap:'10px', textDecoration:'none' }}>
+        <div style={{ width:'28px', height:'28px', background:'#C9A84C', borderRadius:'4px', display:'flex', alignItems:'center', justifyContent:'center' }}><span style={{ fontSize:'12px', fontWeight:900, color:'#0A0E1A' }}>A</span></div>
+        <span style={{ fontSize:'12px', fontWeight:800, color:'#E8EDF5', letterSpacing:'0.08em' }}>AFRIBIZCONNECT</span>
+      </Link>
+      <div style={{ display:'flex', gap:'10px' }}>
+        <Link href="/login"    style={{ fontSize:'12px', color:'#C9A84C', textDecoration:'none', fontWeight:600, padding:'8px 18px', border:'1px solid #C9A84C44', borderRadius:'4px' }}>Sign in</Link>
+        <Link href="/register" style={{ fontSize:'12px', color:'#0A0E1A', background:'#C9A84C', textDecoration:'none', fontWeight:700, padding:'8px 18px', borderRadius:'4px' }}>Get access</Link>
+      </div>
+    </nav>
+      <div style={{ maxWidth:'720px', margin:'0 auto', padding:'80px 48px' }}>
+        <div style={{ fontSize:'11px', color:'#C9A84C', fontWeight:700, letterSpacing:'0.2em', textTransform:'uppercase', marginBottom:'12px', fontFamily:'monospace' }}>Legal</div>
+        <h1 style={{ fontSize:'40px', fontWeight:900, letterSpacing:'-0.02em', marginBottom:'8px' }}>Terms of Service</h1>
+        <p style={{ fontSize:'13px', color:'#4A5568', marginBottom:'48px', fontFamily:'monospace' }}>Last updated: June 2025 · Effective: January 2025</p>
+        <div>
+          
+          <div style={{ borderBottom:'1px solid #1A2540', paddingBottom:'28px', marginBottom:'28px' }}>
+            <h2 style={{ fontSize:'16px', fontWeight:800, color:'#E8EDF5', marginBottom:'12px' }}>1. Acceptance</h2>
+            <p style={{ fontSize:'14px', color:'#4A5568', lineHeight:1.8 }}>By using AfriBizConnect you agree to these Terms. If you disagree, do not use our platform. These Terms apply to all users: importers, exporters, suppliers, logistics providers, and investors. We may update these Terms and will notify you by email of material changes.</p>
+          </div>
+
+          <div style={{ borderBottom:'1px solid #1A2540', paddingBottom:'28px', marginBottom:'28px' }}>
+            <h2 style={{ fontSize:'16px', fontWeight:800, color:'#E8EDF5', marginBottom:'12px' }}>2. Platform description</h2>
+            <p style={{ fontSize:'14px', color:'#4A5568', lineHeight:1.8 }}>AfriBizConnect is a B2B trade infrastructure platform. We provide tools for supplier discovery, RFQ management, logistics quoting, investment deal flow, and trade finance access. We facilitate connections between parties but are not a party to any transaction.</p>
+          </div>
+
+          <div style={{ borderBottom:'1px solid #1A2540', paddingBottom:'28px', marginBottom:'28px' }}>
+            <h2 style={{ fontSize:'16px', fontWeight:800, color:'#E8EDF5', marginBottom:'12px' }}>3. User accounts</h2>
+            <p style={{ fontSize:'14px', color:'#4A5568', lineHeight:1.8 }}>You must provide accurate, complete information when registering. You are responsible for maintaining the confidentiality of your credentials and all activity under your account. Notify us immediately of unauthorized access at security@afribizconnect.com.</p>
+          </div>
+
+          <div style={{ borderBottom:'1px solid #1A2540', paddingBottom:'28px', marginBottom:'28px' }}>
+            <h2 style={{ fontSize:'16px', fontWeight:800, color:'#E8EDF5', marginBottom:'12px' }}>4. Verification and trust</h2>
+            <p style={{ fontSize:'14px', color:'#4A5568', lineHeight:1.8 }}>Verified badges are awarded after our KYB review. Providing false documents or misrepresenting your business will result in immediate termination and may trigger legal action. Trust Scores are calculated from platform activity and may change over time.</p>
+          </div>
+
+          <div style={{ borderBottom:'1px solid #1A2540', paddingBottom:'28px', marginBottom:'28px' }}>
+            <h2 style={{ fontSize:'16px', fontWeight:800, color:'#E8EDF5', marginBottom:'12px' }}>5. Prohibited activities</h2>
+            <p style={{ fontSize:'14px', color:'#4A5568', lineHeight:1.8 }}>You may not use our platform for illegal trade, sanctions violations, money laundering, fraud, spam, or harassment. You may not reverse-engineer our platform, scrape data without permission, or circumvent platform fees by transacting directly with connections made through AfriBizConnect.</p>
+          </div>
+
+          <div style={{ borderBottom:'1px solid #1A2540', paddingBottom:'28px', marginBottom:'28px' }}>
+            <h2 style={{ fontSize:'16px', fontWeight:800, color:'#E8EDF5', marginBottom:'12px' }}>6. Intellectual property</h2>
+            <p style={{ fontSize:'14px', color:'#4A5568', lineHeight:1.8 }}>AfriBizConnect, its trade intelligence data, Trust Score algorithm, and all platform content are owned by AfriBizConnect Ltd and protected by international IP law. You may not reproduce or distribute our content without written permission.</p>
+          </div>
+
+          <div style={{ borderBottom:'1px solid #1A2540', paddingBottom:'28px', marginBottom:'28px' }}>
+            <h2 style={{ fontSize:'16px', fontWeight:800, color:'#E8EDF5', marginBottom:'12px' }}>7. Limitation of liability</h2>
+            <p style={{ fontSize:'14px', color:'#4A5568', lineHeight:1.8 }}>We do not guarantee the accuracy of supplier information, delivery of goods, or payment by buyers. We are not liable for losses from user transactions, customs issues, or logistics failures. Our total liability is capped at fees paid in the prior 12 months.</p>
+          </div>
+
+          <div style={{ borderBottom:'1px solid #1A2540', paddingBottom:'28px', marginBottom:'28px' }}>
+            <h2 style={{ fontSize:'16px', fontWeight:800, color:'#E8EDF5', marginBottom:'12px' }}>8. Governing law</h2>
+            <p style={{ fontSize:'14px', color:'#4A5568', lineHeight:1.8 }}>These Terms are governed by DIFC law. Disputes are subject to the exclusive jurisdiction of the DIFC Courts. If you are a consumer, you may have additional rights under your local law which we will honor.</p>
+          </div>
         </div>
-      </header>
-      <div className="max-w-3xl mx-auto px-5 sm:px-8 py-16">
-        <div className="text-xs font-black uppercase tracking-[0.3em] mb-4" style={{ color:'#1e40af' }}>Legal</div>
-        <h1 className="text-4xl font-black tracking-tighter mb-3" style={{ color:'#0f172a' }}>Terms of Service</h1>
-        <p className="text-sm mb-10" style={{ color:'#64748b' }}>Last updated: June 2025 · Effective date: January 2025</p>
-        <div className="space-y-8">
-          {SECTIONS.map(s => (
-            <div key={s.title}>
-              <h2 className="text-base font-black mb-3" style={{ color:'#0f172a' }}>{s.title}</h2>
-              <p className="text-sm leading-relaxed" style={{ color:'#64748b' }}>{s.content}</p>
-            </div>
+      </div>
+
+    <footer style={{ borderTop:'1px solid #1A2540', padding:'28px 48px' }}>
+      <div style={{ maxWidth:'1100px', margin:'0 auto', display:'flex', justifyContent:'space-between', alignItems:'center', flexWrap:'wrap', gap:'12px' }}>
+        <span style={{ fontSize:'11px', color:'#4A5568', fontFamily:'monospace' }}>© 2025 AfriBizConnect Ltd. DIFC, Dubai, UAE</span>
+        <div style={{ display:'flex', gap:'20px' }}>
+          {[['Privacy','/privacy'],['Terms','/terms'],['Contact','/contact'],['← Home','/']].map(([l,h]) => (
+            <Link key={l} href={h} style={{ fontSize:'11px', color:'#4A5568', textDecoration:'none' }}>{l}</Link>
           ))}
         </div>
       </div>
-      <div className="border-t py-5 text-center text-xs" style={{ borderColor:'#f1f5f9', color:'#94a3b8' }}>
-        <Link href="/" className="hover:text-blue-600 transition-colors">← Back to AfriBizConnect</Link>
-      </div>
+    </footer>
     </div>
   )
 }

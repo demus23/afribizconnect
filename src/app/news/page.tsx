@@ -1,69 +1,73 @@
 import Link from 'next/link'
-import { Globe2, ArrowRight, Calendar, Tag } from 'lucide-react'
 
 const ARTICLES = [
-  { title: "AfriBizConnect raises $3M seed to scale Africa's B2B trade platform", date: 'June 2025', category: 'Company news', desc: 'Dubai-based AfriBizConnect closes seed round led by Africa Finance Corp to expand its verified supplier marketplace and trade finance offering.', color: '#1e40af', bg: '#eff6ff' },
-  { title: 'AfCFTA Implementation Update: What African importers need to know in 2025', date: 'May 2025', category: 'Trade insights', desc: 'A practical guide to leveraging African Continental Free Trade Area preferential tariffs for cross-border goods movement.', color: '#059669', bg: '#f0fdf4' },
-  { title: 'Nigerian Naira stabilizes: Impact on UAE-Africa trade corridors', date: 'May 2025', category: 'Market analysis', desc: 'CBN forex reforms show positive results. We analyze what this means for importers currently sourcing from Gulf suppliers.', color: '#7c3aed', bg: '#f5f3ff' },
-  { title: 'How to structure a Letter of Credit for African imports — complete guide', date: 'April 2025', category: 'Trade guides', desc: 'Step-by-step walkthrough of LC documentation, bank requirements, and common mistakes to avoid when importing to Africa.', color: '#d97706', bg: '#fffbeb' },
-  { title: 'Top 10 verified FMCG suppliers for West African distributors', date: 'April 2025', category: 'Supplier spotlight', desc: 'Our sourcing team highlights the most active and highly-rated FMCG suppliers currently serving Nigeria, Ghana, and Senegal.', color: '#dc2626', bg: '#fef2f2' },
-  { title: 'Kenya cold chain logistics: $8M Series A signals investor confidence', date: 'March 2025', category: 'Investment', desc: 'East Africa\'s cold chain infrastructure gap is closing. We look at recent investments and what it means for agricultural exporters.', color: '#0891b2', bg: '#ecfeff' },
+  { title:"AfriBizConnect raises $3M seed round to scale Africa's B2B trade platform", date:'June 2025', category:'Company news',     color:'#C9A84C', desc:'Dubai-based AfriBizConnect closes seed round to expand verified supplier marketplace, trade intelligence, and AI assistant capabilities.' },
+  { title:'AfCFTA Phase 2: What African importers need to know for July 2025',          date:'June 2025', category:'AfCFTA',           color:'#00D4AA', desc:'The second phase of tariff reductions under the African Continental Free Trade Area takes effect. Full guide for importers and exporters.' },
+  { title:'Nigerian Naira stabilizes at ₦1,580 — Impact on UAE-Nigeria trade',         date:'May 2025',  category:'Market analysis',  color:'#7c3aed', desc:'CBN forex reforms show results. We analyze what this means for importers sourcing from Gulf suppliers and paying in USD.' },
+  { title:'Top 10 verified FMCG suppliers for West African distributors (2025)',        date:'May 2025',  category:'Supplier guide',   color:'#1e40af', desc:'Our sourcing team highlights the highest-rated FMCG suppliers currently active on AfriBizConnect for Nigeria, Ghana, and Senegal.' },
+  { title:'Kenya cold chain logistics: $8M investment signals sector growth',            date:'Apr 2025',  category:'Investment',       color:'#059669', desc:'East Africa cold chain gap is closing. We cover recent investments and what they mean for agricultural exporters in the region.' },
+  { title:'How to structure a Letter of Credit for African imports — 2025 guide',       date:'Apr 2025',  category:'Trade finance',    color:'#d97706', desc:'Step-by-step LC documentation walkthrough with bank requirements, common mistakes, and what customs look for at African ports.' },
 ]
 
 export default function NewsPage() {
   return (
-    <div style={{ fontFamily:"'Geist Sans',system-ui,sans-serif" }}>
-      <header className="border-b" style={{ borderColor:'#f1f5f9' }}>
-        <div className="max-w-7xl mx-auto px-5 sm:px-8 h-16 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2.5">
-            <div className="h-8 w-8 rounded-xl flex items-center justify-center" style={{ background:'linear-gradient(135deg,#1e40af,#0f172a)' }}><Globe2 className="h-4 w-4 text-white" /></div>
-            <span className="font-black text-[15px]">AfriBiz<span style={{ color:'#f59e0b' }}>Connect</span></span>
-          </Link>
-          <Link href="/register" className="text-sm font-black px-5 py-2.5 rounded-xl text-white" style={{ background:'linear-gradient(135deg,#1e40af,#2563eb)' }}>Get started</Link>
-        </div>
-      </header>
+    <div style={{ fontFamily:'"Inter",system-ui,sans-serif', background:'#0A0E1A', minHeight:'100vh', color:'#E8EDF5' }}>
 
-      <section className="py-20 px-5 sm:px-8" style={{ background:'linear-gradient(180deg,#f0f6ff,#fff)' }}>
-        <div className="max-w-7xl mx-auto">
-          <div className="text-xs font-black uppercase tracking-[0.3em] mb-4" style={{ color:'#1e40af' }}>News & insights</div>
-          <h1 className="text-5xl font-black tracking-tighter mb-4" style={{ color:'#0f172a' }}>African Trade Intelligence</h1>
-          <p className="text-lg" style={{ color:'#64748b' }}>Market analysis, trade guides, company news, and supplier spotlights — all in one place.</p>
-        </div>
+    <nav style={{ background:'#0A0E1A', borderBottom:'1px solid #1A2540', padding:'0 48px', height:'64px', display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+      <Link href="/" style={{ display:'flex', alignItems:'center', gap:'10px', textDecoration:'none' }}>
+        <div style={{ width:'28px', height:'28px', background:'#C9A84C', borderRadius:'4px', display:'flex', alignItems:'center', justifyContent:'center' }}><span style={{ fontSize:'12px', fontWeight:900, color:'#0A0E1A' }}>A</span></div>
+        <span style={{ fontSize:'12px', fontWeight:800, color:'#E8EDF5', letterSpacing:'0.08em' }}>AFRIBIZCONNECT</span>
+      </Link>
+      <div style={{ display:'flex', gap:'10px' }}>
+        <Link href="/login"    style={{ fontSize:'12px', color:'#C9A84C', textDecoration:'none', fontWeight:600, padding:'8px 18px', border:'1px solid #C9A84C44', borderRadius:'4px' }}>Sign in</Link>
+        <Link href="/register" style={{ fontSize:'12px', color:'#0A0E1A', background:'#C9A84C', textDecoration:'none', fontWeight:700, padding:'8px 18px', borderRadius:'4px' }}>Get access</Link>
+      </div>
+    </nav>
+      {/* Hero */}
+      <section style={{ maxWidth:'1100px', margin:'0 auto', padding:'80px 48px 60px' }}>
+        <div style={{ fontSize:'11px', color:'#C9A84C', fontWeight:700, letterSpacing:'0.2em', textTransform:'uppercase', marginBottom:'16px', fontFamily:'monospace' }}>News & insights</div>
+        <h1 style={{ fontSize:'clamp(32px,5vw,56px)', fontWeight:900, letterSpacing:'-0.03em', marginBottom:'16px' }}>AfriTrade Intelligence</h1>
+        <p style={{ fontSize:'18px', color:'#4A5568', maxWidth:'540px', lineHeight:1.6 }}>Market analysis, trade guides, company news, and supplier spotlights for African B2B traders.</p>
       </section>
 
-      <section className="py-16 px-5 sm:px-8 border-y" style={{ borderColor:'#f1f5f9' }}>
-        <div className="max-w-7xl mx-auto grid md:grid-cols-2 xl:grid-cols-3 gap-6">
-          {ARTICLES.map((a, i) => (
-            <article key={i} className="rounded-2xl border bg-white overflow-hidden transition-all hover:shadow-lg hover:-translate-y-0.5 flex flex-col" style={{ borderColor:'#e8edf3' }}>
-              <div className="h-2 w-full" style={{ backgroundColor:a.color }} />
-              <div className="p-6 flex flex-col flex-1">
-                <div className="flex items-center gap-2 mb-4">
-                  <span className="text-[10px] font-black px-2.5 py-1 rounded-full" style={{ background:a.bg, color:a.color }}>{a.category}</span>
-                  <span className="text-[10px] flex items-center gap-1" style={{ color:'#94a3b8' }}><Calendar className="h-3 w-3" />{a.date}</span>
-                </div>
-                <h2 className="text-sm font-black leading-snug mb-3 flex-1" style={{ color:'#0f172a' }}>{a.title}</h2>
-                <p className="text-xs leading-relaxed mb-4" style={{ color:'#64748b' }}>{a.desc}</p>
-                <button className="flex items-center gap-1.5 text-xs font-bold" style={{ color:a.color }}>
-                  Read article <ArrowRight className="h-3 w-3" />
-                </button>
+      {/* Articles */}
+      <section style={{ borderTop:'1px solid #1A2540' }}>
+        <div style={{ maxWidth:'1100px', margin:'0 auto', padding:'60px 48px', display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:'1px', background:'#1A2540' }}>
+          {ARTICLES.map(a => (
+            <div key={a.title} style={{ background:'#0F1629', padding:'32px', display:'flex', flexDirection:'column' }}>
+              <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'16px' }}>
+                <span style={{ fontSize:'10px', fontWeight:700, padding:'3px 10px', borderRadius:'20px', background:`${a.color}20`, color:a.color }}>{a.category}</span>
+                <span style={{ fontSize:'10px', color:'#4A5568', fontFamily:'monospace' }}>{a.date}</span>
               </div>
-            </article>
+              <h2 style={{ fontSize:'15px', fontWeight:800, color:'#E8EDF5', marginBottom:'12px', lineHeight:1.4, flex:1 }}>{a.title}</h2>
+              <p style={{ fontSize:'12px', color:'#4A5568', lineHeight:1.6, marginBottom:'20px' }}>{a.desc}</p>
+              <Link href="/blog" style={{ fontSize:'12px', fontWeight:700, color:a.color, textDecoration:'none' }}>Read article →</Link>
+            </div>
           ))}
         </div>
       </section>
 
       {/* Newsletter */}
-      <section className="py-20 px-5 sm:px-8 text-center" style={{ background:'linear-gradient(135deg,#1e40af,#0f172a)' }}>
-        <h2 className="text-3xl font-black text-white mb-3 tracking-tight">Get trade insights weekly</h2>
-        <p className="text-sm mb-8" style={{ color:'rgba(147,197,253,0.7)' }}>FX rates, commodity prices, deal flow, and supplier news every Monday.</p>
-        <div className="flex gap-3 max-w-md mx-auto">
-          <input type="email" placeholder="your@business.com" className="flex-1 px-4 py-3 rounded-xl text-sm focus:outline-none" style={{ backgroundColor:'rgba(255,255,255,0.1)', border:'1px solid rgba(255,255,255,0.15)', color:'white' }} />
-          <button className="px-5 py-3 rounded-xl text-sm font-black" style={{ backgroundColor:'#fbbf24', color:'#0f172a' }}>Subscribe</button>
+      <section style={{ borderTop:'1px solid #1A2540', background:'#0F1629', padding:'80px 48px', textAlign:'center' }}>
+        <div style={{ fontSize:'11px', color:'#C9A84C', fontWeight:700, letterSpacing:'0.2em', textTransform:'uppercase', marginBottom:'16px', fontFamily:'monospace' }}>Weekly briefing</div>
+        <h2 style={{ fontSize:'36px', fontWeight:900, letterSpacing:'-0.02em', marginBottom:'12px' }}>Get trade intelligence weekly</h2>
+        <p style={{ fontSize:'16px', color:'#4A5568', marginBottom:'36px' }}>FX rates, commodity prices, deal flow, and supplier news. Every Monday.</p>
+        <div style={{ display:'flex', gap:'10px', maxWidth:'420px', margin:'0 auto' }}>
+          <input type="email" placeholder="your@business.com" style={{ flex:1, padding:'12px 16px', background:'#0A0E1A', border:'1px solid #1A2540', borderRadius:'6px', fontSize:'13px', color:'#E8EDF5', outline:'none', fontFamily:'inherit' }} />
+          <button style={{ padding:'12px 20px', background:'#C9A84C', color:'#0A0E1A', border:'none', borderRadius:'6px', fontSize:'13px', fontWeight:700, cursor:'pointer', whiteSpace:'nowrap', fontFamily:'inherit' }}>Subscribe</button>
         </div>
       </section>
-      <div className="border-t py-5 text-center text-xs" style={{ borderColor:'#f1f5f9', color:'#94a3b8' }}>
-        <Link href="/" className="hover:text-blue-600 transition-colors">← Back to AfriBizConnect</Link>
+
+    <footer style={{ borderTop:'1px solid #1A2540', padding:'28px 48px' }}>
+      <div style={{ maxWidth:'1100px', margin:'0 auto', display:'flex', justifyContent:'space-between', alignItems:'center', flexWrap:'wrap', gap:'12px' }}>
+        <span style={{ fontSize:'11px', color:'#4A5568', fontFamily:'monospace' }}>© 2025 AfriBizConnect Ltd. DIFC, Dubai, UAE</span>
+        <div style={{ display:'flex', gap:'20px' }}>
+          {[['Privacy','/privacy'],['Terms','/terms'],['Contact','/contact'],['← Home','/']].map(([l,h]) => (
+            <Link key={l} href={h} style={{ fontSize:'11px', color:'#4A5568', textDecoration:'none' }}>{l}</Link>
+          ))}
+        </div>
       </div>
+    </footer>
     </div>
   )
 }

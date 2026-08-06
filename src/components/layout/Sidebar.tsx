@@ -1,69 +1,114 @@
 'use client'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { useState, useEffect } from 'react'
 import {
-  LayoutDashboard, ShoppingBag, TrendingUp, Globe2, Truck,
-  Ship, MessageSquare, Users, Settings, Globe, ChevronRight,
-  Zap, BadgeCheck,BarChart3, Bot
+  LayoutDashboard, ShoppingBag, TrendingUp, Globe2,
+  Truck, RefreshCw, MessageSquare, Users, Settings,
+  BarChart3, Shield, Zap, Bell, Gift, Code2, ShieldCheck,
+  PieChart, Lightbulb, BookOpen
 } from 'lucide-react'
-import { cn } from '@/lib/utils'
 
 const NAV = [
-  { href: '/dashboard',   label: 'Dashboard',   icon: LayoutDashboard, badge: null },
-  { href: '/marketplace', label: 'Marketplace',  icon: ShoppingBag,    badge: 'New' },
-  { href: '/invest',      label: 'Invest',       icon: TrendingUp,     badge: null },
-  { href: '/sourcing',    label: 'Sourcing',     icon: Globe2,         badge: null },
-  { href: '/logistics',   label: 'Logistics',    icon: Truck,          badge: null },
-  { href: '/trade',       label: 'Trade',        icon: Ship,           badge: null },
-  { href: '/messages',    label: 'Messages',     icon: MessageSquare,  badge: '3' },
-  { href: '/network',     label: 'Network',      icon: Users,          badge: null },
-  { href: '/settings',    label: 'Settings',     icon: Settings,       badge: null },
-  { href: '/market',    label: 'Market Data', icon: BarChart3,  badge: 'Live' },
-  { href: '/assistant', label: 'AI Assistant', icon: Bot,        badge: 'New' },
+  { href: '/dashboard',    label: 'Overview',       icon: LayoutDashboard },
+  { href: '/marketplace',  label: 'Suppliers',      icon: ShoppingBag,   badge: 'NEW' },
+  { href: '/invest',       label: 'Deal Flow',      icon: TrendingUp },
+  { href: '/sourcing',     label: 'RFQ Desk',       icon: Globe2 },
+  { href: '/logistics',    label: 'Logistics',      icon: Truck },
+  { href: '/trade',        label: 'Trade Hub',      icon: RefreshCw },
+  { href: '/messages',     label: 'Messages',       icon: MessageSquare, count: true },
+  { href: '/network',      label: 'Network',        icon: Users },
+  { href: '/market-data',  label: 'Market Data',    icon: BarChart3,     badge: 'LIVE' },
+  { href: '/analytics',    label: 'Analytics',      icon: PieChart },
+  { href: '/intelligence', label: 'Intelligence',   icon: Lightbulb,     badge: 'NEW' },
+  { href: '/alerts',       label: 'Price Alerts',   icon: Bell },
+  { href: '/credit',       label: 'Credit Score',   icon: ShieldCheck },
+  { href: '/referral',     label: 'Referral',       icon: Gift },
+  { href: '/developer',    label: 'Developer API',  icon: Code2 },
+  { href: '/blog', label: 'Trade Insights', icon: BookOpen, badge: 'NEW' },
+  { href: '/settings',     label: 'Settings',       icon: Settings },
+  { href: '/admin',        label: 'Admin',          icon: Shield },
 ]
 
-export function Sidebar() {
+const MARKETS = [
+  { pair: 'USD/NGN', val: '1,587', chg: '+0.3%', up: true  },
+  { pair: 'USD/KES', val: '129.8', chg: '+0.1%', up: true  },
+  { pair: 'CRUDE',   val: '$78.4', chg: '+1.2%', up: true  },
+  { pair: 'COCOA',   val: '$6,842',chg: '-0.9%', up: false },
+]
+
+export function Sidebar({
+  unreadMessages = 0,
+  trustScore = 0,
+  plan = 'FREE',
+}: {
+  unreadMessages?: number
+  trustScore?: number
+  plan?: string
+}) {
   const pathname = usePathname()
+  const [time, setTime] = useState('')
+  const [blink, setBlink] = useState(true)
+
+  useEffect(() => {
+    const t = setInterval(() => {
+      setTime(new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' }))
+      setBlink(b => !b)
+    }, 1000)
+    return () => clearInterval(t)
+  }, [])
+
+  const planColor =
+    plan === 'GROWTH'  ? '#00D4AA' :
+    plan === 'STARTER' ? '#C9A84C' : '#4A5568'
 
   return (
-    <aside className="hidden lg:flex w-60 shrink-0 flex-col border-r border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 h-screen">
+    <aside style={{
+      width: '220px', minWidth: '220px', height: '100vh', position: 'sticky', top: 0,
+      background: '#0A0E1A', borderRight: '1px solid #1A2540',
+      display: 'flex', flexDirection: 'column',
+      fontFamily: '"Inter", system-ui, sans-serif',
+      overflow: 'hidden',
+    }}>
 
       {/* Logo */}
-      <div className="flex items-center gap-2.5 h-14 px-5 border-b border-neutral-100 dark:border-neutral-800">
-        <div className="h-7 w-7 rounded-lg bg-emerald-600 flex items-center justify-center shrink-0">
-          <Globe className="h-3.5 w-3.5 text-white" />
+      <div style={{ padding: '20px 16px', borderBottom: '1px solid #1A2540', display: 'flex', alignItems: 'center', gap: '10px' }}>
+        <div style={{ width: '28px', height: '28px', background: '#C9A84C', borderRadius: '3px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+          <span style={{ fontSize: '11px', fontWeight: 900, color: '#0A0E1A' }}>A</span>
         </div>
         <div>
-          <div className="text-sm font-semibold leading-none">AfriBizConnect</div>
-          <div className="text-[10px] text-neutral-400 mt-0.5">Trade Platform</div>
+          <div style={{ fontSize: '11px', fontWeight: 700, color: '#E8EDF5', letterSpacing: '0.05em' }}>AFRIBIZ</div>
+          <div style={{ fontSize: '9px', color: '#4A5568', letterSpacing: '0.1em' }}>CONNECT PRO</div>
+        </div>
+        <div style={{ marginLeft: 'auto', fontSize: '10px', color: blink ? '#00D4AA' : '#4A5568', fontFamily: 'monospace', transition: 'color 0.2s' }}>
+          {time}
         </div>
       </div>
 
-      {/* Navigation */}
-      <nav className="flex-1 overflow-y-auto p-3 space-y-0.5">
-        {NAV.map(({ href, label, icon: Icon, badge }) => {
+      {/* Nav */}
+      <nav style={{ flex: 1, padding: '8px 0', overflowY: 'auto' }}>
+        {NAV.map(({ href, label, icon: Icon, badge, count }: any) => {
           const active = pathname === href || (href !== '/dashboard' && pathname.startsWith(href))
           return (
-            <Link
-              key={href}
-              href={href}
-              className={cn(
-                'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all group',
-                active
-                  ? 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-400'
-                  : 'text-neutral-500 dark:text-neutral-400 hover:bg-neutral-50 dark:hover:bg-neutral-800 hover:text-neutral-900 dark:hover:text-white'
-              )}
-            >
-              <Icon className={cn('h-4 w-4 shrink-0', active ? 'text-emerald-600 dark:text-emerald-400' : '')} />
-              <span className="flex-1">{label}</span>
+            <Link key={href} href={href} style={{
+              display: 'flex', alignItems: 'center', gap: '10px',
+              padding: '9px 16px', textDecoration: 'none',
+              background: active ? '#0F1629' : 'transparent',
+              borderLeft: active ? '2px solid #C9A84C' : '2px solid transparent',
+              transition: 'all 0.15s',
+            }}
+              onMouseEnter={e => { if (!active) e.currentTarget.style.background = '#0F162988' }}
+              onMouseLeave={e => { if (!active) e.currentTarget.style.background = 'transparent' }}>
+              <Icon size={13} color={active ? '#C9A84C' : '#4A5568'} />
+              <span style={{ fontSize: '12px', fontWeight: active ? 600 : 400, color: active ? '#E8EDF5' : '#64748B', flex: 1, letterSpacing: '0.01em' }}>{label}</span>
               {badge && (
-                <span className={cn(
-                  'text-[10px] font-semibold px-1.5 py-0.5 rounded-full',
-                  badge === 'New'
-                    ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-400'
-                    : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-400'
-                )}>
+                <span style={{ fontSize: '8px', padding: '2px 5px', borderRadius: '2px', fontWeight: 700, letterSpacing: '0.1em', background: badge === 'LIVE' ? '#00D4AA22' : '#C9A84C22', color: badge === 'LIVE' ? '#00D4AA' : '#C9A84C' }}>
                   {badge}
+                </span>
+              )}
+              {count && unreadMessages > 0 && (
+                <span style={{ fontSize: '9px', padding: '1px 5px', borderRadius: '10px', background: '#C9A84C', color: '#0A0E1A', fontWeight: 700 }}>
+                  {unreadMessages}
                 </span>
               )}
             </Link>
@@ -71,27 +116,47 @@ export function Sidebar() {
         })}
       </nav>
 
-      {/* Trust score widget */}
-      <div className="p-3 border-t border-neutral-100 dark:border-neutral-800">
-        <div className="rounded-xl bg-neutral-50 dark:bg-neutral-800 p-3.5">
-          <div className="flex items-center justify-between mb-2.5">
-            <div className="flex items-center gap-1.5">
-              <BadgeCheck className="h-4 w-4 text-emerald-500" />
-              <span className="text-xs font-semibold">Trust Score</span>
-            </div>
-            <span className="text-xs font-bold text-emerald-600">72/100</span>
-          </div>
-          <div className="h-1.5 bg-neutral-200 dark:bg-neutral-700 rounded-full overflow-hidden">
-            <div className="h-full w-[72%] bg-gradient-to-r from-emerald-500 to-emerald-400 rounded-full" />
-          </div>
-          <p className="text-[10px] text-neutral-400 mt-2">Complete your profile to reach 100</p>
-          <Link
-            href="/settings/billing"
-            className="mt-2.5 flex items-center justify-center gap-1.5 w-full bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-semibold py-1.5 rounded-lg transition-colors"
-          >
-            <Zap className="h-3 w-3" /> Upgrade plan
-          </Link>
+      {/* Live market mini-strip */}
+      <div style={{ borderTop: '1px solid #1A2540', padding: '12px 0' }}>
+        <div style={{ padding: '0 16px 8px', fontSize: '9px', color: '#4A5568', letterSpacing: '0.15em', textTransform: 'uppercase', fontFamily: 'monospace', display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <span style={{ color: '#00D4AA' }}>●</span> Markets
         </div>
+        {MARKETS.map(m => (
+          <div key={m.pair} style={{ display: 'flex', alignItems: 'center', padding: '5px 16px', gap: '6px' }}>
+            <span style={{ fontSize: '9px', color: '#4A5568', fontFamily: 'monospace', width: '52px' }}>{m.pair}</span>
+            <span style={{ fontSize: '10px', color: '#E8EDF5', fontFamily: 'monospace', flex: 1 }}>{m.val}</span>
+            <span style={{ fontSize: '9px', color: m.up ? '#00D4AA' : '#FF4D6D', fontFamily: 'monospace' }}>{m.chg}</span>
+          </div>
+        ))}
+      </div>
+
+      {/* Trust score + plan */}
+      <div style={{ borderTop: '1px solid #1A2540', padding: '14px 16px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+          <span style={{ fontSize: '9px', color: '#4A5568', letterSpacing: '0.1em', textTransform: 'uppercase' }}>Trust Score</span>
+          <span style={{ fontSize: '12px', fontWeight: 700, fontFamily: 'monospace', color: trustScore >= 80 ? '#00D4AA' : trustScore >= 60 ? '#C9A84C' : '#4A5568' }}>
+            {trustScore}/100
+          </span>
+        </div>
+        <div style={{ height: '2px', background: '#1A2540', borderRadius: '1px', marginBottom: '12px' }}>
+          <div style={{ height: '100%', width: `${trustScore}%`, background: trustScore >= 80 ? '#00D4AA' : '#C9A84C', borderRadius: '1px', transition: 'width 1s ease' }} />
+        </div>
+
+        {plan === 'FREE' ? (
+          <Link href="/settings?tab=billing" style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
+            padding: '8px', background: '#C9A84C14', border: '1px solid #C9A84C33',
+            borderRadius: '3px', textDecoration: 'none', width: '100%',
+          }}>
+            <Zap size={10} color="#C9A84C" />
+            <span style={{ fontSize: '10px', color: '#C9A84C', fontWeight: 700, letterSpacing: '0.08em' }}>UPGRADE TO PRO</span>
+          </Link>
+        ) : (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '6px 8px', background: '#0F1629', borderRadius: '3px' }}>
+            <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: planColor }} />
+            <span style={{ fontSize: '10px', color: planColor, fontWeight: 700, letterSpacing: '0.1em' }}>{plan} PLAN</span>
+          </div>
+        )}
       </div>
     </aside>
   )
