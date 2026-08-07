@@ -1,12 +1,15 @@
 import { Resend } from 'resend'
-
-const resend = new Resend(process.env.RESEND_API_KEY)
+function getResend() {
+  if (!process.env.RESEND_API_KEY) return null
+  return new Resend(process.env.RESEND_API_KEY)
+}
 const FROM   = 'AfriBizConnect <noreply@afribizconnect.com>'
 
 // ── Welcome email on signup ──────────────────────────────────
 export async function sendWelcomeEmail(email: string, name: string) {
-  if (!process.env.RESEND_API_KEY) return
-  await resend.emails.send({
+  const resend = getResend()
+if (!resend) return
+await resend.emails.send({
     from: FROM, to: email,
     subject: 'Welcome to AfriBizConnect — Africa\'s Trade Platform',
     html: `
@@ -40,8 +43,9 @@ export async function sendWelcomeEmail(email: string, name: string) {
 
 // ── RFQ response notification ────────────────────────────────
 export async function sendRfqResponseEmail(email: string, name: string, rfqTitle: string, supplierName: string) {
-  if (!process.env.RESEND_API_KEY) return
-  await resend.emails.send({
+  const resend = getResend()
+if (!resend) return
+await resend.emails.send({
     from: FROM, to: email,
     subject: `New quote received for your RFQ: ${rfqTitle}`,
     html: `
@@ -62,8 +66,9 @@ export async function sendRfqResponseEmail(email: string, name: string, rfqTitle
 
 // ── New message notification ─────────────────────────────────
 export async function sendMessageEmail(email: string, name: string, senderName: string, preview: string) {
-  if (!process.env.RESEND_API_KEY) return
-  await resend.emails.send({
+  const resend = getResend()
+if (!resend) return
+await resend.emails.send({
     from: FROM, to: email,
     subject: `New message from ${senderName} on AfriBizConnect`,
     html: `
@@ -87,8 +92,9 @@ export async function sendMessageEmail(email: string, name: string, senderName: 
 
 // ── Investment inquiry confirmation ──────────────────────────
 export async function sendInvestmentInquiryEmail(email: string, name: string, dealTitle: string) {
-  if (!process.env.RESEND_API_KEY) return
-  await resend.emails.send({
+  const resend = getResend()
+if (!resend) return
+await resend.emails.send({
     from: FROM, to: email,
     subject: `Investment inquiry received: ${dealTitle}`,
     html: `
@@ -109,8 +115,9 @@ export async function sendInvestmentInquiryEmail(email: string, name: string, de
 
 // ── Subscription confirmation ────────────────────────────────
 export async function sendSubscriptionEmail(email: string, name: string, plan: string) {
-  if (!process.env.RESEND_API_KEY) return
-  await resend.emails.send({
+  const resend = getResend()
+if (!resend) return
+await resend.emails.send({
     from: FROM, to: email,
     subject: `You're now on AfriBizConnect ${plan.charAt(0).toUpperCase() + plan.slice(1)}! 🚀`,
     html: `
@@ -133,8 +140,9 @@ export async function sendSubscriptionEmail(email: string, name: string, plan: s
 
 // ── Verification approved ────────────────────────────────────
 export async function sendVerificationEmail(email: string, name: string, businessName: string, score: number) {
-  if (!process.env.RESEND_API_KEY) return
-  await resend.emails.send({
+  const resend = getResend()
+if (!resend) return
+await resend.emails.send({
     from: FROM, to: email,
     subject: `${businessName} is now verified on AfriBizConnect ✅`,
     html: `
