@@ -3,7 +3,9 @@ import Stripe from 'stripe'
 import { prisma } from '@/lib/prisma'
 import { createClient } from '@/lib/supabase/server'
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, { apiVersion: '2026-04-22.dahlia' })
+function getStripe() {
+  return new Stripe(process.env.STRIPE_SECRET_KEY!, { apiVersion: '2026-04-22.dahlia' })
+}
 
 const PLANS: Record<string, { priceId: string }> = {
   starter: { priceId: process.env.STRIPE_STARTER_PRICE_ID! },
@@ -11,6 +13,7 @@ const PLANS: Record<string, { priceId: string }> = {
 }
 
 export async function POST(request: NextRequest) {
+  const stripe = getStripe()
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
