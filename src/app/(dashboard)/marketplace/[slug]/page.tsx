@@ -6,13 +6,7 @@ import { BadgeCheck, Globe2, MapPin, Package, Clock, CreditCard, ArrowLeft, Mess
 const TYPE_LABELS: Record<string,string> = { SUPPLIER:'Supplier', LOGISTICS_PROVIDER:'Logistics', DISTRIBUTOR:'Distributor', IMPORTER:'Importer', INVESTOR:'Investor' }
 const COUNTRY_NAMES: Record<string,string> = { AE:'UAE', CN:'China', TR:'Turkey', IN:'India', DE:'Germany', KR:'South Korea', DK:'Denmark', CH:'Switzerland', US:'USA', FR:'France', NG:'Nigeria', KE:'Kenya', GH:'Ghana', ZA:'South Africa', ET:'Ethiopia', EG:'Egypt', SN:'Senegal' }
 
-export async function generateStaticParams() {
-  const businesses = await prisma.business.findMany({
-    where: { verificationStatus: 'VERIFIED' },
-    select: { slug: true },
-  })
-  return businesses.map(b => ({ slug: b.slug }))
-}
+
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params
