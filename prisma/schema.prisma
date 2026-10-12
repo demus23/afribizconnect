@@ -99,6 +99,7 @@ model Business {
   rfqs               RFQ[]
   shipments          Shipment[]
   logisticsQuotes    LogisticsQuote[]
+  catalogItems       CatalogItem[]
   createdAt          DateTime           @default(now())
   updatedAt          DateTime           @updatedAt
 
@@ -249,4 +250,47 @@ model Subscription {
   currentPeriodEnd     DateTime?
   createdAt            DateTime  @default(now())
   updatedAt            DateTime  @updatedAt
+}
+
+// ─── Trade Agent ──────────────────────────────────────────────────────────────
+
+// A supplier's price list. The trade agent quotes from these rows.
+model CatalogItem {
+  id              String   @id @default(cuid())
+  businessId      String
+  business        Business @relation(fields: [businessId], references: [id])
+  name            String
+  category        String
+  keywords        String[]
+  unitPriceUsd    Float
+  unit            String   @default("piece")
+  moq             Int      @default(1)
+  weightKgPerUnit Float
+  hsCode          String?
+  leadTimeDays    Int?
+  inStockDubai    Boolean  @default(true)
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([category])
+  @@index([businessId])
+}
+
+// One row per buyer request handled by the agent (WhatsApp or test endpoint).
+model AgentRequest {
+  id          String   @id @default(cuid())
+  channel     String   // "whatsapp" | "test"
+  buyerPhone  String?
+  inputText   String
+  replyText   String?
+  quotes      Json?
+  toolTrace   Json?
+  status      String   @default("PROCESSING") // PROCESSING | QUOTED | NEEDS_INFO | FAILED
+  latencyMs   Int?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([buyerPhone])
+  @@index([createdAt])
 }
