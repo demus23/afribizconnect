@@ -8,7 +8,7 @@ export const TOOL_DEFINITIONS = [
     description:
       'Search verified suppliers\' price lists for products matching the buyer\'s request. ' +
       'Returns catalog items with supplier name, trust score, unit price (USD), MOQ and weight. ' +
-      'Call it again with different keywords if the first search returns nothing useful.',
+      'Use broad keywords in ONE call; only search again if it returns zero results.',
     input_schema: {
       type: 'object',
       properties: {
@@ -37,14 +37,29 @@ export const TOOL_DEFINITIONS = [
     },
   },
   {
-    name: 'submit_reply',
+    name: 'get_duty_rates',
     description:
-      'Finish the task. Call exactly once, last. Use status QUOTED with up to 3 ranked options, ' +
-      'or NEEDS_INFO with one short question when product, quantity or destination country is missing.',
+      'Look up the import duty, taxes and levies AfriBizConnect uses for a destination country and product category. ' +
+      'Use this to answer general duty questions — never quote duty rates from memory.',
     input_schema: {
       type: 'object',
       properties: {
-        status: { type: 'string', enum: ['QUOTED', 'NEEDS_INFO', 'NO_MATCH'] },
+        destination_country: { type: 'string', description: 'ISO code or name: KE, UG, TZ, ET, NG, GH' },
+        category: { type: 'string', description: 'Optional, e.g. Electronics, Solar, Food, Textiles, Auto Parts' },
+      },
+      required: ['destination_country'],
+    },
+  },
+  {
+    name: 'submit_reply',
+    description:
+      'Finish the task. Call exactly once, last. QUOTED = up to 3 ranked options; ' +
+      'NEEDS_INFO = one short question when product, quantity or destination country is missing; ' +
+      'ANSWERED = a general trade question answered (no options); NO_MATCH = nothing suitable in the catalog.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        status: { type: 'string', enum: ['QUOTED', 'NEEDS_INFO', 'ANSWERED', 'NO_MATCH'] },
         reply_text: { type: 'string', description: 'The WhatsApp message to the buyer, in the buyer\'s language' },
         options: {
           type: 'array',
@@ -82,6 +97,8 @@ export async function runTool(name: string, input: Json): Promise<Json> {
       return searchCatalog(input)
     case 'calculate_landed_cost':
       return calculateLandedCost(input)
+    case 'get_duty_rates':
+      return getDutyRates(input)
     default:
       return { error: `Unknown tool ${name}` }
   }
@@ -174,9 +191,24 @@ async function calculateLandedCost({ catalog_item_id, quantity, destination_coun
     landed_total_usd: r2(total),
     landed_per_unit_usd: r2(total / qty),
     landed_total_local: Math.round(total * fx.rate),
+    landed_per_unit_local: Math.round((total / qty) * fx.rate),
     local_currency: dest.currency,
     fx_rate: fx.rate,
     fx_live: fx.live,
     is_estimate: true,
+  }
+}
+
+function getDutyRates({ destination_country, category }: Json) {
+  const code = resolveCountry(String(destination_country))
+  if (!code) return { error: `Destination "${destination_country}" not supported yet. Supported: ${Object.keys(DESTINATIONS).join(', ')}` }
+  const d = DESTINATIONS[code]
+  const duty = category ? { [category]: d.duty[category] ?? d.duty.default } : d.duty
+  return {
+    destination: d.name,
+    duty_on_cif: duty,
+    levies_on_cif: d.leviesOnCif,
+    taxes_on_cif_plus_duty: d.taxesOnDutiable,
+    note: 'Indicative platform rates; confirm the exact HS code with a customs broker before shipping.',
   }
 }

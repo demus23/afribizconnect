@@ -280,13 +280,16 @@ model CatalogItem {
 // One row per buyer request handled by the agent (WhatsApp or test endpoint).
 model AgentRequest {
   id          String   @id @default(cuid())
-  channel     String   // "whatsapp" | "test"
+  channel     String   // "whatsapp" | "dashboard" | "test"
   buyerPhone  String?
+  userEmail   String?  // dashboard user (Supabase auth email)
   inputText   String
   replyText   String?
   quotes      Json?
   toolTrace   Json?
-  status      String   @default("PROCESSING") // PROCESSING | QUOTED | NEEDS_INFO | FAILED
+  status      String   @default("PROCESSING") // PROCESSING | QUOTED | NEEDS_INFO | ANSWERED | NO_MATCH | FAILED | ORDER_REQUESTED
+  selectedOption Json? // the option the buyer chose to order
+  orderedAt   DateTime?
   latencyMs   Int?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt

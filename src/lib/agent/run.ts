@@ -3,40 +3,69 @@ import { TOOL_DEFINITIONS, runTool } from './tools'
 const MODEL = process.env.AGENT_MODEL || 'claude-opus-5-5'
 const MAX_TURNS = 8
 
-const SYSTEM_PROMPT = `You are the AfriBizConnect Trade Agent. African business owners message you on WhatsApp to buy goods from verified suppliers in Dubai.
+const SYSTEM_PROMPT = `You are the AfriBizConnect Trade Agent. African business owners message you (WhatsApp or the AfriBizConnect dashboard) to buy goods from verified suppliers in Dubai, or to ask trade questions.
 
-Your job for each request:
-1. Work out the product, quantity and destination country. The buyer may write in English, Swahili, Amharic, French or another language.
+BUYING REQUESTS:
+1. Work out product, quantity and destination country. The buyer may write in English, Swahili, Amharic, French or another language. Use earlier messages in the conversation for context.
 2. If product, quantity or destination country is missing, call submit_reply with status NEEDS_INFO and ONE short question. Do not guess quantity or country.
-3. Otherwise call search_catalog (English keywords). Try 2-3 keyword variations if results are poor.
-4. For the best 3-5 matches, call calculate_landed_cost. Default to air for orders under 300 kg total, sea above, unless the buyer says otherwise.
-5. Rank up to 3 options by landed total, supplier trust and transit time. Call submit_reply with status QUOTED.
+3. Call search_catalog ONCE with broad English keywords. Search again only if it returned zero results.
+4. Call calculate_landed_cost for the best 2-3 combinations IN THE SAME TURN (parallel). Default to air under 300 kg total, sea above, unless the buyer says otherwise. Offering the same product by air and by sea counts as two options.
+5. Only offer products that match what was asked. Never pad with unrelated or much more expensive products.
+6. Rank up to 3 options by landed total, supplier trust and transit time, then call submit_reply with status QUOTED.
+
+GENERAL TRADE QUESTIONS (duties, Incoterms, payments, documents):
+- For duty or tax rates, call get_duty_rates and use its numbers. Never quote rates from memory.
+- For other topics answer from general knowledge, briefly and practically, and say when the buyer should confirm with a customs broker or bank.
+- Finish with submit_reply status ANSWERED.
 
 Rules:
-- Every price you mention must come from a calculate_landed_cost result. Never invent or adjust a number.
+- Every price must come from a calculate_landed_cost result. Never invent or adjust a number.
 - Prices are estimates; say so in one short phrase.
 - Prefer verified suppliers; mention when a supplier is not verified.
 - If nothing matches, use status NO_MATCH and say we will source it and come back.
 - Reply in the buyer's language.
 
-WhatsApp reply format (keep under 900 characters):
+Reply format (under 900 characters, plain text):
 - One opening line.
-- Each option: number, product + supplier, landed total in local currency and USD, per-unit cost, delivery days, one-line reason.
-- End with: "Reply 1, 2 or 3 to order." (translated).
-- Use *bold* sparingly. No markdown headers or tables.`
+- Each option: number, product + supplier, landed total in local currency and USD, per-unit cost in local currency and USD, delivery days, one-line reason.
+- End quotes with "Reply 1, 2 or 3 to order." (translated).
+- Use *bold* sparingly. No headers or tables.`
+
+export interface ChatTurn {
+  role: 'user' | 'assistant'
+  content: string
+}
 
 export interface AgentResult {
-  status: 'QUOTED' | 'NEEDS_INFO' | 'NO_MATCH' | 'FAILED'
+  status: 'QUOTED' | 'NEEDS_INFO' | 'ANSWERED' | 'NO_MATCH' | 'FAILED'
   replyText: string
   options: any[]
   trace: { tool: string; input: any; output: any }[]
 }
 
-export async function runTradeAgent(buyerMessage: string): Promise<AgentResult> {
+/** Joins each chosen option with the full landed-cost breakdown the tool returned. */
+function withBreakdowns(options: any[], trace: AgentResult['trace']) {
+  const costs = trace.filter(t => t.tool === 'calculate_landed_cost' && t.output && !t.output.error)
+  return options.map(o => {
+    const match =
+      costs.find(c => c.input.catalog_item_id === o.catalog_item_id && (!o.shipping_mode || c.output.shipping_mode === o.shipping_mode)) ??
+      costs.find(c => c.input.catalog_item_id === o.catalog_item_id)
+    return match ? { ...o, landed: match.output } : o
+  })
+}
+
+/**
+ * Runs the agent. `input` is either a single buyer message, or a conversation
+ * (oldest first, last turn from the user) so follow-ups keep their context.
+ */
+export async function runTradeAgent(input: string | ChatTurn[]): Promise<AgentResult> {
   const apiKey = process.env.ANTHROPIC_API_KEY
   if (!apiKey) throw new Error('ANTHROPIC_API_KEY is not set')
 
-  const messages: any[] = [{ role: 'user', content: buyerMessage }]
+  const history: ChatTurn[] = typeof input === 'string' ? [{ role: 'user', content: input }] : input.slice(-12)
+  const messages: any[] = history.map(t => ({ role: t.role, content: t.content }))
+  while (messages.length && messages[0].role !== 'user') messages.shift()
+  if (!messages.length || messages.at(-1).role !== 'user') throw new Error('Conversation must end with a user message')
   const trace: AgentResult['trace'] = []
 
   for (let turn = 0; turn < MAX_TURNS; turn++) {
@@ -67,7 +96,7 @@ export async function runTradeAgent(buyerMessage: string): Promise<AgentResult> 
       return {
         status: final.input.status,
         replyText: final.input.reply_text,
-        options: final.input.options ?? [],
+        options: withBreakdowns(final.input.options ?? [], trace),
         trace,
       }
     }

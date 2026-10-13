@@ -23,6 +23,9 @@ Every request is logged in AgentRequest with the full tool trace (use it for dem
 | `src/lib/agent/handle.ts` | Runs the agent and logs to `AgentRequest` |
 | `src/app/api/agent/whatsapp/route.ts` | Meta webhook (GET verify, POST messages) |
 | `src/app/api/agent/quote/route.ts` | Test endpoint, no WhatsApp needed |
+| `src/app/api/agent/chat/route.ts` | Dashboard chat → agent (signed-in users, keeps conversation context) |
+| `src/app/api/agent/order/route.ts` | "Order option N" button → marks the request ORDER_REQUESTED |
+| `src/components/ai/TradeAssistant.tsx` | Dashboard panel: quote cards, cost breakdown, order button |
 | `prisma/seed-catalog.ts` | Demo supplier price lists |
 
 ## Setup
