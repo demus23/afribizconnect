@@ -22,6 +22,7 @@ interface Landed {
   landed_per_unit_local?: number
   local_currency: string
   fx_live: boolean
+  demo_data?: boolean
 }
 
 interface QuoteOption {
@@ -97,14 +98,17 @@ function QuoteCard({ option, ordered, disabled, onOrder }: { option: QuoteOption
         <div style={{ width: '22px', height: '22px', borderRadius: '6px', background: GOLD, color: BASE, fontSize: '11px', fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{option.rank}</div>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontSize: '12px', fontWeight: 700, color: INK, lineHeight: 1.35 }}>{l?.product ?? 'Option'}</div>
-          <div style={{ fontSize: '11px', color: MUTED, display: 'flex', alignItems: 'center', gap: '4px', marginTop: '2px' }}>
-            <ShieldCheck size={11} color={GREEN} /> {option.supplier}
+          <div style={{ fontSize: '11px', color: MUTED, display: 'flex', alignItems: 'center', gap: '4px', marginTop: '2px', flexWrap: 'wrap' }}>
+            {l?.demo_data
+              ? <><span>{option.supplier}</span><span style={{ fontSize: '9px', fontWeight: 700, letterSpacing: '0.04em', color: '#F5B041', border: '1px solid #F5B04155', borderRadius: '4px', padding: '1px 5px' }}>DEMO LISTING · NOT VERIFIED</span></>
+              : <><ShieldCheck size={11} color={GREEN} /> {option.supplier}</>}
           </div>
         </div>
       </div>
 
       <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: '8px' }}>
         <div>
+          <div style={{ fontSize: '9px', fontWeight: 700, letterSpacing: '0.06em', color: MUTED, marginBottom: '1px' }}>ESTIMATED LANDED COST</div>
           <div style={{ fontSize: '16px', fontWeight: 800, color: GOLD, fontFamily: '"JetBrains Mono",monospace' }}>
             {l ? local(l.landed_total_local, l.local_currency) : usd(option.landed_total_usd)}
           </div>
@@ -142,7 +146,7 @@ function QuoteCard({ option, ordered, disabled, onOrder }: { option: QuoteOption
               <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 700, borderTop: '1px solid #22304F', paddingTop: '4px', marginTop: '2px' }}>
                 <span>Landed total</span><span>{usd(l.landed_total_usd)}</span>
               </div>
-              <div style={{ color: MUTED, fontFamily: 'inherit', fontSize: '10px', marginTop: '2px' }}>Estimate · {l.fx_live ? 'live FX' : 'reference FX'} · to {l.destination}</div>
+              <div style={{ color: MUTED, fontFamily: 'inherit', fontSize: '10px', marginTop: '2px' }}>Estimate, not a confirmed offer · {l.fx_live ? 'live FX' : 'reference FX'} · to {l.destination}{l.demo_data ? ' · demo price list' : ''}</div>
             </div>
           )}
         </>
@@ -151,7 +155,7 @@ function QuoteCard({ option, ordered, disabled, onOrder }: { option: QuoteOption
       <button onClick={onOrder} disabled={disabled || ordered}
         style={{ marginTop: '2px', padding: '8px', borderRadius: '8px', border: 'none', cursor: disabled || ordered ? 'default' : 'pointer', fontSize: '12px', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
           background: ordered ? `${GREEN}22` : GOLD, color: ordered ? GREEN : BASE, opacity: disabled && !ordered ? 0.35 : 1 }}>
-        {ordered ? <><CheckCircle2 size={13} /> Order requested</> : `Order option ${option.rank}`}
+        {ordered ? <><CheckCircle2 size={13} /> Pending confirmation</> : `Request order · option ${option.rank}`}
       </button>
     </div>
   )
@@ -202,7 +206,7 @@ export default function TradeAssistant() {
       if (!res.ok) throw new Error(data.error || 'Order failed')
       setMessages(p => [
         ...p.map((m, i) => (i === msgIndex ? { ...m, orderedRank: rank } : m)),
-        { role: 'assistant', content: `Order request sent for option ${rank} (${data.supplier}, ${usd(data.landed_total_usd)} landed). Our team will confirm stock, final freight and payment details with you shortly.` },
+        { role: 'assistant', content: `Order request recorded for option ${rank} (${data.supplier}, estimated ${usd(data.landed_total_usd)} landed). Status: pending confirmation. No payment has been taken and nothing has shipped. Our team will confirm stock, final freight and price before anything moves.` },
       ])
     } catch (e: any) {
       setMessages(p => [...p, { role: 'assistant', content: e?.message || 'Could not place the order. Please try again.' }])
@@ -233,7 +237,7 @@ export default function TradeAssistant() {
             {avatar('assistant')}
             <div style={{ flex: 1 }}>
               <div style={{ fontSize: '13px', fontWeight: 700, color: INK }}>AfriBiz Trade Agent</div>
-              {!mini && <div style={{ fontSize: '10px', color: GREEN }}>● Sources Dubai suppliers · prices delivered to your door</div>}
+              {!mini && <div style={{ fontSize: '10px', color: GREEN }}>● Sources Dubai suppliers · estimates landed cost</div>}
             </div>
             <button onClick={() => setMini(m => !m)} aria-label={mini ? 'Expand' : 'Minimise'} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px', color: '#4A5568' }}>
               {mini ? <Maximize2 size={14} /> : <Minimize2 size={14} />}
@@ -251,7 +255,7 @@ export default function TradeAssistant() {
                     <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-start' }}>
                       {avatar('assistant')}
                       <div style={{ background: CARD, borderRadius: '12px 12px 12px 4px', padding: '12px 14px', fontSize: '13px', color: INK, lineHeight: 1.5 }}>
-                        Tell me what you want to buy, how many, and where to deliver. I find verified Dubai suppliers and price everything to your door: freight, duty, VAT and FX. Any language works.
+                        Tell me what you want to buy, how many, and where to deliver. I find Dubai suppliers and estimate the full cost to your door: freight, duty, VAT and FX. Any language works.
                       </div>
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>

@@ -121,3 +121,10 @@ export function resolveCountry(input: string): string | null {
   const byName = Object.entries(DESTINATIONS).find(([, d]) => d.name.toUpperCase() === v)
   return byName ? byName[0] : null
 }
+
+/**
+ * While the catalog holds demo price lists (prisma/seed-catalog.ts), supplier
+ * "verification" and prices are not commercial facts. Set AGENT_DEMO_DATA=false
+ * only once real supplier price lists and verification are in place.
+ */
+export const DEMO_DATA = process.env.AGENT_DEMO_DATA !== 'false'

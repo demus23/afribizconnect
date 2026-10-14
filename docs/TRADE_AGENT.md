@@ -24,7 +24,8 @@ Every request is logged in AgentRequest with the full tool trace (use it for dem
 | `src/app/api/agent/whatsapp/route.ts` | Meta webhook (GET verify, POST messages) |
 | `src/app/api/agent/quote/route.ts` | Test endpoint, no WhatsApp needed |
 | `src/app/api/agent/chat/route.ts` | Dashboard chat → agent (signed-in users, keeps conversation context) |
-| `src/app/api/agent/order/route.ts` | "Order option N" button → marks the request ORDER_REQUESTED |
+| `src/app/api/agent/order/route.ts` + `src/lib/agent/order.ts` | "Request order" button → atomically sets the request to PENDING_CONFIRMATION (no payment or shipment) |
+| `prisma/verify-orders.ts` | `pnpm agent:verify-orders` — checks order records, duplicates and side effects against the real DB |
 | `src/components/ai/TradeAssistant.tsx` | Dashboard panel: quote cards, cost breakdown, order button |
 | `prisma/seed-catalog.ts` | Demo supplier price lists |
 
@@ -62,3 +63,9 @@ curl -X POST http://localhost:3000/api/agent/quote \
 - Replace every number in `rates.ts` with Aramex / CrossBorderCart contract rates and current tariffs.
 - Replace demo catalog with real supplier price lists.
 - Next steps: conversation memory ("reply 2 to order"), order + escrow, container pooling, customs docs, trade-credit offer.
+
+## Demo data
+
+While the catalog holds the demo price lists, leave `AGENT_DEMO_DATA` unset. Suppliers are then never called
+"verified", quote cards show **DEMO LISTING · NOT VERIFIED**, and prices are labelled as estimates. Set
+`AGENT_DEMO_DATA=false` only when real supplier price lists and verification are in place.

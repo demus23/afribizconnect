@@ -1,12 +1,12 @@
 import { prisma } from '@/lib/prisma'
-import { DESTINATIONS, INSURANCE_RATE, resolveCountry, usdTo, type ShippingMode } from './rates'
+import { DEMO_DATA, DESTINATIONS, INSURANCE_RATE, resolveCountry, usdTo, type ShippingMode } from './rates'
 
 /** Tool schemas sent to Claude. Implementations are in `runTool` below. */
 export const TOOL_DEFINITIONS = [
   {
     name: 'search_catalog',
     description:
-      'Search verified suppliers\' price lists for products matching the buyer\'s request. ' +
+      'Search suppliers\' price lists for products matching the buyer\'s request. ' +
       'Returns catalog items with supplier name, trust score, unit price (USD), MOQ and weight. ' +
       'Use broad keywords in ONE call; only search again if it returns zero results.',
     input_schema: {
@@ -139,12 +139,18 @@ async function searchCatalog({ keywords = [], category, quantity }: Json) {
       in_stock_dubai: i.inStockDubai,
       supplier: i.business.name,
       supplier_city: i.business.city,
-      supplier_verified: i.business.verificationStatus === 'VERIFIED',
+      supplier_verified: !DEMO_DATA && i.business.verificationStatus === 'VERIFIED',
+      demo_listing: DEMO_DATA,
       supplier_trust_score: i.business.trustScore,
     }))
 
   const droppedForMoq = items.filter(i => quantity && i.moq > quantity).length
-  return { count: results.length, results, dropped_for_moq: droppedForMoq }
+  return {
+    count: results.length,
+    results,
+    dropped_for_moq: droppedForMoq,
+    ...(DEMO_DATA ? { data_note: 'DEMO price lists: suppliers are not independently verified and prices are illustrative.' } : {}),
+  }
 }
 
 async function calculateLandedCost({ catalog_item_id, quantity, destination_country, shipping_mode }: Json) {
@@ -196,6 +202,7 @@ async function calculateLandedCost({ catalog_item_id, quantity, destination_coun
     fx_rate: fx.rate,
     fx_live: fx.live,
     is_estimate: true,
+    demo_data: DEMO_DATA,
   }
 }
 

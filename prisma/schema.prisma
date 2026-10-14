@@ -287,7 +287,7 @@ model AgentRequest {
   replyText   String?
   quotes      Json?
   toolTrace   Json?
-  status      String   @default("PROCESSING") // PROCESSING | QUOTED | NEEDS_INFO | ANSWERED | NO_MATCH | FAILED | ORDER_REQUESTED
+  status      String   @default("PROCESSING") // PROCESSING | QUOTED | NEEDS_INFO | ANSWERED | NO_MATCH | FAILED | PENDING_CONFIRMATION (ORDER_REQUESTED = legacy)
   selectedOption Json? // the option the buyer chose to order
   orderedAt   DateTime?
   latencyMs   Int?
