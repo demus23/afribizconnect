@@ -22,7 +22,7 @@ export async function requestOrder(opts: { requestId: string; rank: number; user
   if (!req || !req.userEmail || req.userEmail !== opts.userEmail) {
     return { ok: false, code: 'NOT_FOUND', message: 'Quote not found' }
   }
-  if (ORDERED_STATUSES.includes(req.status)) {
+  if ([...ORDERED_STATUSES, 'CONFIRMED', 'CANCELLED'].includes(req.status)) {
     return { ok: false, code: 'ALREADY_ORDERED', message: 'An order was already requested for this quote' }
   }
   if (req.status !== 'QUOTED') {
@@ -41,3 +41,18 @@ export async function requestOrder(opts: { requestId: string; rank: number; user
   }
   return { ok: true, requestId: req.id, rank: opts.rank, option }
 }
+
+/** Statuses the AfriBizConnect team can move a pending order to. Status changes only — no payment or shipment. */
+export const ORDER_REVIEW_ACTIONS = { confirm: 'CONFIRMED', cancel: 'CANCELLED' } as const
+export type OrderReviewAction = keyof typeof ORDER_REVIEW_ACTIONS
+
+/** Moves a pending order to CONFIRMED or CANCELLED. Atomic: only succeeds while the order is still pending. */
+export async function reviewOrder(requestId: string, action: OrderReviewAction) {
+  const { count } = await prisma.agentRequest.updateMany({
+    where: { id: requestId, status: { in: ORDERED_STATUSES } },
+    data: { status: ORDER_REVIEW_ACTIONS[action] },
+  })
+  return count === 1
+}
+
+export const ORDER_LIST_STATUSES = [...ORDERED_STATUSES, 'CONFIRMED', 'CANCELLED']

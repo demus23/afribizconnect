@@ -1,12 +1,14 @@
 'use client'
 import { useState, useEffect } from 'react'
+import AgentOrdersTab from '@/components/admin/AgentOrdersTab'
 import { Users, Building2, FileText, MessageSquare, TrendingUp, BadgeCheck, Clock, CheckCircle2, XCircle, Loader2, RefreshCw, AlertTriangle, Package, BarChart3, Shield } from 'lucide-react'
 
 export default function AdminPage() {
   const [data, setData]       = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [acting, setActing]   = useState<string|null>(null)
-  const [tab, setTab]         = useState<'overview'|'verify'|'opportunities'|'users'>('overview')
+  const [tab, setTab]         = useState<'overview'|'verify'|'opportunities'|'users'|'orders'>('overview')
+  const [pendingOrders, setPendingOrders] = useState<number|null>(null)
   const [trustInput, setTrust]= useState<Record<string,number>>({})
 
   useEffect(() => { load() }, [])
@@ -62,7 +64,7 @@ export default function AdminPage() {
 
       {/* Tabs */}
       <div className="flex gap-1 p-1 rounded-xl w-fit" style={{ background:'#f1f5f9' }}>
-        {[{id:'overview',label:'Overview'},{id:'verify',label:`Verify (${stats.pendingVerification})`},{id:'opportunities',label:'Opportunities'},{id:'users',label:'Users'}].map(t => (
+        {[{id:'overview',label:'Overview'},{id:'verify',label:`Verify (${stats.pendingVerification})`},{id:'opportunities',label:'Opportunities'},{id:'users',label:'Users'},{id:'orders',label:`Agent orders${pendingOrders ? ` (${pendingOrders})` : ''}`}].map(t => (
           <button key={t.id} onClick={() => setTab(t.id as any)}
             className="text-sm font-bold px-4 py-2 rounded-lg transition-all"
             style={tab===t.id ? { background:'white', color:'#0f172a', boxShadow:'0 1px 4px rgba(0,0,0,0.08)' } : { color:'#64748b' }}>
@@ -187,6 +189,8 @@ export default function AdminPage() {
       )}
 
       {/* USERS */}
+      {tab === 'orders' && <AgentOrdersTab onCount={setPendingOrders} />}
+
       {tab === 'users' && (
         <div className="rounded-2xl bg-white border p-6" style={{ borderColor:'#e8edf3' }}>
           <h2 className="text-sm font-black mb-5" style={{ color:'#0f172a' }}>All recent users ({stats.totalUsers} total)</h2>

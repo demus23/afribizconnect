@@ -25,6 +25,7 @@ Every request is logged in AgentRequest with the full tool trace (use it for dem
 | `src/app/api/agent/quote/route.ts` | Test endpoint, no WhatsApp needed |
 | `src/app/api/agent/chat/route.ts` | Dashboard chat → agent (signed-in users, keeps conversation context) |
 | `src/app/api/agent/order/route.ts` + `src/lib/agent/order.ts` | "Request order" button → atomically sets the request to PENDING_CONFIRMATION (no payment or shipment) |
+| `src/app/api/admin/agent-orders/route.ts` + `src/components/admin/AgentOrdersTab.tsx` | Admin → Agent orders: list orders, Confirm / Cancel (status only; needs `ADMIN_EMAIL`) |
 | `prisma/verify-orders.ts` | `pnpm agent:verify-orders` — checks order records, duplicates and side effects against the real DB |
 | `src/components/ai/TradeAssistant.tsx` | Dashboard panel: quote cards, cost breakdown, order button |
 | `prisma/seed-catalog.ts` | Demo supplier price lists |
